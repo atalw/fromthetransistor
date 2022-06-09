@@ -1,20 +1,20 @@
-`timescale 1ns/100ps
+`timescale 10ms/1ms
 module blinking_led;
-    input wire out_clock;
+    input wire led;
     output reg clock;
 
-    blinking bl(clock, out_clock);
+    blinking bl(clock, led);
 
     initial
         clock = 1'b0;
 
     always
-        #10 clock = ~clock;
+        #10 clock <= ~clock;
 
     initial
     begin
-        $monitor($time, " clock = %b, out_clock = %b", clock, out_clock);
-        #100 $finish;
+        $monitor($time, " clock = %b, led = %b", clock, led);
+        #1000 $finish;
     end
 
     initial
