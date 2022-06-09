@@ -1,6 +1,6 @@
-## Section 1: Intro: Cheating our way past the transistor
+## Intro: Cheating our way past the transistor
 
-#### Links
+#### Read
 
 - [Transistor](https://en.wikipedia.org/wiki/Transistor)
 - [FPGA](https://en.wikipedia.org/wiki/Field-programmable_gate_array)

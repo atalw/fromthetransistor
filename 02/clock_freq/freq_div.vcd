@@ -1,0 +1,57 @@
+$date
+	Thu Jun  9 14:22:44 2022
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	100ps
+$end
+$scope module freq_div $end
+$var wire 1 ! out_clock $end
+$var reg 1 " clock $end
+$var reg 1 # reset $end
+$scope module freq1 $end
+$var wire 1 " clock $end
+$var wire 1 # reset $end
+$var reg 1 ! out_clock $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+0#
+0"
+x!
+$end
+#100
+0!
+1"
+#200
+0"
+1#
+#300
+1!
+1"
+#400
+0"
+#500
+0!
+1"
+#600
+0"
+#700
+1!
+1"
+#800
+0"
+#900
+0!
+1"
+#1000
+0"
+#1100
+1!
+1"
+#1200
+0"
