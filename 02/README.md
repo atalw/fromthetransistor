@@ -2,7 +2,8 @@
 
 #### Read
 
-- [Verilog intro](https://www.iitg.ac.in/hemangee/cs224_2020/verilog2.pdf)
+- [Verilog intro 1](https://www.iitg.ac.in/hemangee/cs224_2020/verilog1.pdf)
+- [Verilog intro 2](https://www.iitg.ac.in/hemangee/cs224_2020/verilog2.pdf)
 
 #### Run instructions
 
