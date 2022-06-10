@@ -23,7 +23,6 @@ class Assembler:
                 pass
             idx += 1
 
-
         return bin_instructions
 
     '''
