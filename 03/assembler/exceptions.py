@@ -20,3 +20,6 @@ class NotSupported(Error):
 
 class InvalidArgs(Error):
     pass
+
+class InvalidRegister(Error):
+    pass

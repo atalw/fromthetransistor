@@ -5,7 +5,6 @@ from assembler import Assembler
 # free format
 # one-pass or two-pass?
 
-
 class Instruction:
     # Optional. If present it's equal to the address into which the first byte of object code
     # generated for the instruction will be loaded.

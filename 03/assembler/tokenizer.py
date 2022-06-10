@@ -1,4 +1,5 @@
 import re
+from ctypes import *
 from enum import Enum, auto
 from instruction_set import opcodes, conditions
 from exceptions import NotSupported, IllegalToken
@@ -30,10 +31,11 @@ class Token:
                 value = conditions[literal]
             elif literal[0] == 'R' and literal[1:].isdigit():
                 token_type = TokenType.REG
-                value = bin(int(literal[1:]))
+                value = int(literal[1:])
             elif literal[0] == '#':
                 token_type = TokenType.IMM
-                value = bin(int(literal[1:]))
+                #  value = bin(c_ushort(literal[1:]))
+                value = c_ushort(int(literal[1:])).value
             else:
                 raise NotSupported(literal)
         else:
@@ -47,13 +49,22 @@ class Tokenizer:
 
     def parse_instructions(self, instructions) -> [[Token]]:
         all_tokens = []
-        for instruction in instructions:
+
+        def do_parse(instruction):
             literals = re.split('\n|, | ', instruction)
-            literals.remove('')
+            if '' in literals:
+                literals.remove('')
 
             inst_tokens = []
             for literal in literals:
                 inst_tokens.append(Token(literal))
             all_tokens.append(inst_tokens)
+
+        if type(instructions) == list:
+            for instruction in instructions:
+                do_parse(instruction)
+        else:
+            do_parse(instructions)
+
 
         return all_tokens
