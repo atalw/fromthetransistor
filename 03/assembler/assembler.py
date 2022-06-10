@@ -6,21 +6,22 @@ class Assembler:
         self.bin_instructions = self.encode(instructions)
 
     def encode(self, instructions):
-        bin_instructions = [[]]
+        bin_instructions = []
         idx = 0
         for instruction in instructions:
-            print(len(instruction))
+            bin_instructions.append([])
             tt = instruction[0].token_type
             if tt == TokenType.LABEL:
                 pass
             elif tt == TokenType.OPCODE:
                 v = instruction[0].value
-                if v == opcodes['ADC']:
-                    bin_instructions[idx] = self.encode_adc(instruction)
+                if v == opcodes['ADD'] or v == opcodes['ADC']:
+                    bin_instructions[idx] = self.encode_ad(instruction)
                 elif v == opcodes['MOV']:
                     bin_instructions[idx] = self.encode_mov(instruction)
             else:
                 pass
+            idx += 1
 
 
         return bin_instructions
@@ -31,7 +32,7 @@ class Assembler:
     ---- -- - ---- - ---  ---  --------
     cond       op  S reg1 reg2  const
     '''
-    def encode_adc(self, instruction) -> str:
+    def encode_ad(self, instruction) -> str:
         assert(len(instruction) == 4)
         # TODO: accept dynamic condition
         cond = "1110"
@@ -40,7 +41,6 @@ class Assembler:
         rd = format(instruction[1].value, '04b')
         rn = format(instruction[2].value, '04b')
         imm12 = format(instruction[3].value, '012b')
-        print("len", len(rn))
 
         return cond + "001" + opcode + s + rn + rd + imm12
 
@@ -69,3 +69,5 @@ class Assembler:
 
         res += op2
         return res
+
+    # just keep following the spec and adding more opcode impls. straightforward really...

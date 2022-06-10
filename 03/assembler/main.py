@@ -23,7 +23,6 @@ def parse_line():
 def main():
     contents = Io.read_file()
     tokenizer = Tokenizer(contents)
-    print(tokenizer.instructions)
     assembler = Assembler(tokenizer.instructions)
     Io.write_file(assembler.bin_instructions)
 

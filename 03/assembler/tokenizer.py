@@ -49,9 +49,10 @@ class Tokenizer:
 
     def parse_instructions(self, instructions) -> [[Token]]:
         all_tokens = []
+        instructions = instructions.split('\n')
 
-        def do_parse(instruction):
-            literals = re.split('\n|, | ', instruction)
+        for instruction in instructions:
+            literals = re.split(', | ', instruction)
             if '' in literals:
                 literals.remove('')
 
@@ -59,12 +60,5 @@ class Tokenizer:
             for literal in literals:
                 inst_tokens.append(Token(literal))
             all_tokens.append(inst_tokens)
-
-        if type(instructions) == list:
-            for instruction in instructions:
-                do_parse(instruction)
-        else:
-            do_parse(instructions)
-
 
         return all_tokens
