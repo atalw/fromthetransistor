@@ -1,12 +1,11 @@
 `include "Def_StructureParameter.v"
-`default_nettype none
 
 module adder(in_Rn, in_Op2, in_Carry, out_Y, out_CNZV);
-    input  wire [`WordWidth-1:0] in_Rn;
-    input  wire [`WordWidth-1:0] in_Op2;
-    input  wire                  in_Carry;
-    output wire [`WordWidth-1:0] out_Y;
-    output wire [3:0]            out_CNZV;
+    input   wire [`WordWidth-1:0] in_Rn;
+    input   wire [`WordWidth-1:0] in_Op2;
+    input   wire                  in_Carry;
+    output  wire [`WordWidth-1:0] out_Y;
+    output  wire [3:0]            out_CNZV;
 
     reg [`WordWidth-1:0] r_Y;
     reg [3:0]            r_CNZV;
@@ -36,19 +35,11 @@ module adder(in_Rn, in_Op2, in_Carry, out_Y, out_CNZV);
 
     integer idx;
 
-    initial
-    begin
-        r_Y = `WordWidth'd0;
-        r_CNZV = 4'b0000;
-        idx = 0;
-    end
-
     always @(in_Rn or in_Op2 or in_Carry)
     begin
         // Add operands bit by bit taking care of carry
         for (idx = 0; idx < `WordWidth; idx = idx + 1)
         begin
-            #1;
             if (idx == 0)
                 r_CNZV[3] = in_Carry;
 

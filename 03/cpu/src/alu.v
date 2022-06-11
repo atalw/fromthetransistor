@@ -1,7 +1,6 @@
 `include "Def_ALUType.v"
 `include "Def_StructureParameter.v"
 `include "adder.v"
-`default_nettype none
 
 module alu(in_Rn, in_Op2, in_Carry, in_Opcode, out_Y, out_CNZV);
     input   wire  [`WordWidth-1:0]  in_Rn;      // (operand 1) register
@@ -11,9 +10,6 @@ module alu(in_Rn, in_Op2, in_Carry, in_Opcode, out_Y, out_CNZV);
     output  wire  [`WordWidth-1:0]  out_Y;      // result
     output  wire  [3:0]             out_CNZV;   // condition status register. eg out_CNZV[3] = c, out_CNZV[2] = n...
 
-    reg [`WordWidth-1:0] r_Rn;
-    reg [`WordWidth-1:0] r_Op2;
-    reg                  r_Carry;
     reg [`WordWidth-1:0] r_Y;
     reg [3:0]            r_CNZV;
     // Adder registers
@@ -29,6 +25,7 @@ module alu(in_Rn, in_Op2, in_Carry, in_Opcode, out_Y, out_CNZV);
     begin
         ad_Rn = `WordZero;
         ad_Op2 = `WordZero;
+        ad_Carry = 1'b0;
         r_Y = `WordZero;
         r_CNZV = 4'b0000;
 
@@ -36,35 +33,35 @@ module alu(in_Rn, in_Op2, in_Carry, in_Opcode, out_Y, out_CNZV);
             // AND: operand1 AND operand2
             // TST: as AND, but result is not written
             `ALUType_And, `ALUType_Tst: begin
-                r_Y <= in_Rn & in_Op2;
-                r_CNZV[3] <= r_Carry;
-                r_CNZV[2] <= r_Y[`WordWidth-1];
-                r_CNZV[1] <= (r_Y == 0);
+                r_Y = in_Rn & in_Op2;
+                r_CNZV[3] = in_Carry;
+                r_CNZV[2] = r_Y[`WordWidth-1];
+                r_CNZV[1] = (r_Y == 0);
             end
 
             // EOR: operand1 EOR operand2
             // TEQ: as EOR, but result is not written
             `ALUType_Eor, `ALUType_Teq: begin
-                r_Y <= in_Rn ^ in_Op2;
-                r_CNZV[3] <= r_Carry;
-                r_CNZV[2] <= r_Y[`WordWidth-1];
-                r_CNZV[1] <= (r_Y == 0);
+                r_Y = in_Rn ^ in_Op2;
+                r_CNZV[3] = in_Carry;
+                r_CNZV[2] = r_Y[`WordWidth-1];
+                r_CNZV[1] = (r_Y == 0);
             end
 
             // SUB: operand1 - operand2
             // CMP: as SUB, but result is not written
             `ALUType_Sub, `ALUType_Cmp: begin
                 ad_Op2 = -in_Op2;
-                r_Y <= ad_Y;
-                r_CNZV <= ad_CNZV;
+                r_Y = ad_Y;
+                r_CNZV = ad_CNZV;
             end
 
             // operand2 - operand1
             `ALUType_Rsb: begin
                 ad_Rn = -in_Rn;
                 ad_Op2 = in_Op2;
-                r_Y <= ad_Y;
-                r_CNZV <= ad_CNZV;
+                r_Y = ad_Y;
+                r_CNZV = ad_CNZV;
             end
 
             // ADD: operand1 + operand2
@@ -72,84 +69,67 @@ module alu(in_Rn, in_Op2, in_Carry, in_Opcode, out_Y, out_CNZV);
             `ALUType_Add, `ALUType_Cmn: begin
                 ad_Rn = in_Rn;
                 ad_Op2 = in_Op2;
-                r_Y <= ad_Y;
-                r_CNZV <= ad_CNZV;
+                r_Y = ad_Y;
+                r_CNZV = ad_CNZV;
             end
 
             // operand1 + operand2 + carry
             `ALUType_Adc: begin
                 ad_Rn = in_Rn;
                 ad_Op2 = in_Op2;
-                ad_Carry = r_Carry;
-                r_Y <= ad_Y;
-                r_CNZV <= ad_CNZV;
+                ad_Carry = in_Carry;
+                r_Y = ad_Y;
+                r_CNZV = ad_CNZV;
             end
 
             // operand1 - operand2 + carry - 1
             `ALUType_Sbc: begin
                 ad_Rn = in_Rn;
                 ad_Op2 = -in_Op2;
-                ad_Carry = r_Carry;
-                r_Y <= ad_Y - 1;
-                r_CNZV <= ad_CNZV;
+                ad_Carry = in_Carry;
+                r_Y = ad_Y - 1;
+                r_CNZV = ad_CNZV;
             end
 
             // operand2 - operand1 + carry - 1
             `ALUType_Rsc: begin
                 ad_Rn = -in_Rn;
                 ad_Op2 = in_Op2;
-                ad_Carry = r_Carry;
-                r_Y <= ad_Y - 1;
-                r_CNZV <= ad_CNZV;
+                ad_Carry = in_Carry;
+                r_Y = ad_Y - 1;
+                r_CNZV = ad_CNZV;
             end
-
-            // `ALUType_Tst: begin
-            //     r_Y = in_Rn & in_Op2;
-            //     r_CNZV[3] = r_Carry;
-            // end
-
-            // as EOR, but result is not written
-            // `ALUType_Teq: begin
-            // end
-
-            // as SUB, but result is not written
-            // `ALUType_Cmp: begin
-            // end
-
-            // as ADD, but result is not written
-            // `ALUType_Cmn: begin
-            // end
 
             // operand1 OR operand2
             `ALUType_Orr: begin
-                r_Y <= in_Rn | in_Op2;
-                r_CNZV[3] <= r_Carry;
-                r_CNZV[2] <= r_Y[`WordWidth-1];
-                r_CNZV[1] <= (r_Y == 0);
+                r_Y = in_Rn | in_Op2;
+                r_CNZV[3] = in_Carry;
+                r_CNZV[2] = r_Y[`WordWidth-1];
+                r_CNZV[1] = (r_Y == 0);
             end
 
             // operand2 (operand1 is ignored)
             `ALUType_Mov: begin
                 r_Y = in_Op2;
-                r_CNZV[3] <= r_Carry;
-                r_CNZV[2] <= r_Y[`WordWidth-1];
-                r_CNZV[1] <= (r_Y == 0);
+                r_CNZV[3] = in_Carry;
+                r_CNZV[2] = r_Y[`WordWidth-1];
+                r_CNZV[1] = (r_Y == 0);
             end
 
             // operand1 AND NOT operand2 (Bit clear)
             `ALUType_Bic: begin
                 r_Y <= in_Rn & ~in_Op2;
-                r_CNZV[3] <= r_Carry;
+                r_CNZV[3] <= in_Carry;
                 r_CNZV[2] <= r_Y[`WordWidth-1];
                 r_CNZV[1] <= (r_Y == 0);
             end
 
             // NOT operand2 (operand1 is ignored)
             `ALUType_Mvn: begin
-                r_Y <= ~in_Op2;
-                r_CNZV[3] <= r_Carry;
-                r_CNZV[2] <= r_Y[`WordWidth-1];
-                r_CNZV[1] <= (r_Y == 0);
+                r_Y = ~in_Op2;
+                r_CNZV[3] = in_Carry;
+                r_CNZV[2] = r_Y[`WordWidth-1];
+                r_CNZV[1] = (r_Y == 0);
             end
         endcase
     end // always

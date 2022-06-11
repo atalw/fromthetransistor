@@ -3,4 +3,4 @@
 
 `define WordWidth 32
 `define ByteWidth 8
-`define WordZero 32'h0000_0000
+`define WordZero 32'd0
