@@ -1,4 +1,5 @@
 `include "src/Def_StructureParameter.v"
+`include "src/Def_ALUType.v"
 `include "src/alu.v"
 
 module alu_tb;
@@ -25,7 +26,9 @@ module alu_tb;
         in_Rn = `WordWidth'd1;
         in_Op2 = `WordWidth'd1;
         in_Carry = 1'b0;
-        in_Opcode = 4'b0100;
+        $display("ADD 1, 1");
+        in_Opcode = `ALUType_Add;
+        $display("ADD 1, 1");
 
         #100;
         $display("ADD 2, 3");

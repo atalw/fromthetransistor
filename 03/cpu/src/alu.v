@@ -10,8 +10,8 @@ module alu(in_Rn, in_Op2, in_Carry, in_Opcode, out_Y, out_CNZV);
     output  wire  [`WordWidth-1:0]  out_Y;      // result
     output  wire  [3:0]             out_CNZV;   // condition status register. eg out_CNZV[3] = c, out_CNZV[2] = n...
 
-    reg [`WordWidth-1:0] r_Y;
-    reg [3:0]            r_CNZV;
+    reg [`WordWidth-1:0]  r_Y;
+    reg [3:0]             r_CNZV;
     // Adder registers
     reg [`WordWidth-1:0]  ad_Rn;
     reg [`WordWidth-1:0]  ad_Op2;
@@ -118,10 +118,10 @@ module alu(in_Rn, in_Op2, in_Carry, in_Opcode, out_Y, out_CNZV);
 
             // operand1 AND NOT operand2 (Bit clear)
             `ALUType_Bic: begin
-                r_Y <= in_Rn & ~in_Op2;
-                r_CNZV[3] <= in_Carry;
-                r_CNZV[2] <= r_Y[`WordWidth-1];
-                r_CNZV[1] <= (r_Y == 0);
+                r_Y = in_Rn & ~in_Op2;
+                r_CNZV[3] = in_Carry;
+                r_CNZV[2] = r_Y[`WordWidth-1];
+                r_CNZV[1] = (r_Y == 0);
             end
 
             // NOT operand2 (operand1 is ignored)

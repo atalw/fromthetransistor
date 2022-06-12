@@ -31,15 +31,20 @@ module adder(in_Rn, in_Op2, in_Carry, out_Y, out_CNZV);
                     one_bit_add = 2'b11;
             endcase
         end
-    endfunction // one_bit_adder
+    endfunction // one_bit_add
 
-    integer idx;
+    integer idx = 0;
 
     always @(in_Rn or in_Op2 or in_Carry)
     begin
+        r_Y = `WordWidth'd0;
+        r_CNZV = 4'b0000;
+
         // Add operands bit by bit taking care of carry
         for (idx = 0; idx < `WordWidth; idx = idx + 1)
         begin
+            // zero-delay loop issue fix
+            #0;
             if (idx == 0)
                 r_CNZV[3] = in_Carry;
 
