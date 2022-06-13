@@ -67,13 +67,13 @@ module shifter_tb;
             $display("---- Test failed, got %b and %b", out_Op2, out_Carry);
 
         #100;
-        $display("ASR 132, #0");
+        $display("ASR 4290000000, #0");
         in_Val = 32'd4290000000;
         in_Shift_type = `ArithmeticRightShift;
         in_Shift_imm = 0;
         in_C_flag = 0;
         #10;
-        if (out_Op2 != 32'h11111111 || out_Carry != 1'b1)
+        if (out_Op2 != 32'b11111111111111111111111111111111 || out_Carry != 1'b1)
             $display("---- Test failed, got %b and %b", out_Op2, out_Carry);
 
         #100;
