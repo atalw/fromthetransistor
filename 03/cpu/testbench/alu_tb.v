@@ -13,22 +13,18 @@ module alu_tb;
 
     alu a(in_Rn, in_Op2, in_Carry, in_Opcode, out_Y, out_CNZV);
 
-    initial
-    begin
-        $dumpfile("cpu.vcd");
+    initial begin
+        $dumpfile("alu.vcd");
         $dumpvars;
     end
 
-    initial
-    begin
+    initial begin
         #100;
         $display("ADD 1, 1");
         in_Rn = `WordWidth'd1;
         in_Op2 = `WordWidth'd1;
         in_Carry = 1'b0;
-        $display("ADD 1, 1");
         in_Opcode = `ALUType_Add;
-        $display("ADD 1, 1");
 
         #100;
         $display("ADD 2, 3");

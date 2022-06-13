@@ -1,21 +1,17 @@
 `include "Def_StructureParameter.v"
-
-`define LogicalLeftShift     2'b00
-`define LogicalRightShift    2'b01
-`define ArithmeticRightShift 2'b10
-`define RotateRightShift     2'b11
+`include "Def_BarrelShifter.v"
 
 // 32-bit
 module barrel_shifter(in_Val, in_Shift_type, in_Shift_imm, in_C_flag, out_Op2, out_Carry);
-    input  wire [`WordWidth-1:0] in_Val;
-    input  wire [1:0]            in_Shift_type;
-    input  wire [4:0]            in_Shift_imm;
-    input  wire                  in_C_flag;
-
     // in_Shift_imm: amount to be shifted by. if op2 is imm, amount = 4-bit rotate * 2, else it is
     //               5-bit shift amount
     // in_C_flag: C flag of CNZV (CPSR condition)
     // in_Val: value to be shifted. can be register content or imm
+
+    input  wire [`WordWidth-1:0] in_Val;
+    input  wire [1:0]            in_Shift_type;
+    input  wire [4:0]            in_Shift_imm;
+    input  wire                  in_C_flag;
 
     output wire [`WordWidth-1:0] out_Op2;
     output wire                  out_Carry;
@@ -42,7 +38,7 @@ module barrel_shifter(in_Val, in_Shift_type, in_Shift_imm, in_C_flag, out_Op2, o
                 end
                 else begin
                     // the least significant discarded bit becomes the shifter carry output
-                    {r_Carry, r_Op2} = {in_C_flag, in_Val} << in_Shift_imm;
+                    {r_Carry, r_Op2} = {r_Carry, in_Val} << in_Shift_imm;
                 end
             end
 
@@ -56,7 +52,7 @@ module barrel_shifter(in_Val, in_Shift_type, in_Shift_imm, in_C_flag, out_Op2, o
                 end
                 else begin
                     // the most significant discarded bit becomes the shifter carry output
-                    {r_Op2, r_Carry} = {in_Val, in_C_flag} >> in_Shift_imm;
+                    {r_Op2, r_Carry} = {in_Val, r_Carry} >> in_Shift_imm;
                 end
             end
 
@@ -70,16 +66,16 @@ module barrel_shifter(in_Val, in_Shift_type, in_Shift_imm, in_C_flag, out_Op2, o
                 if (in_Shift_imm == 0) begin
                     r_Carry = in_Val[`WordWidth-1];
                     if (r_Carry == 1)
-                        r_Op2 = `WordWidth'd1;
+                        r_Op2 = `WordWidth'h11111111;
                     else
                         r_Op2 = `WordWidth'd0;
                 end
                 else begin
                     r_Sign = in_Val[`WordWidth-1];
                     if (r_Sign == 1)
-                        {r_junk, r_Op2, r_Carry} = {32'd1, in_Val, in_C_flag} >> in_Shift_imm;
+                        {r_junk, r_Op2, r_Carry} = {32'd1, in_Val, r_Carry} >> in_Shift_imm;
                     else
-                        {r_Op2, r_Carry} = {in_Val, in_C_flag} >> in_Shift_imm;
+                        {r_Op2, r_Carry} = {in_Val, r_Carry} >> in_Shift_imm;
 
                 end
             end
@@ -91,10 +87,11 @@ module barrel_shifter(in_Val, in_Shift_type, in_Shift_imm, in_C_flag, out_Op2, o
                 // quantity formed by appending the CPSR C flag to the most significant
                 // end of the contents of Rm
                 if (in_Shift_imm == 0) begin
-                    {r_Op2, r_Carry} = {in_C_flag, r_Op2};
+                    {r_junk, r_Op2, r_Carry} = {in_Val, in_C_flag, in_Val} >> 1;
                 end
                 else begin
-                    {r_junk, r_Op2, r_Carry} = {in_Val, in_Val, in_C_flag} >> in_Shift_imm;
+                    // carry out should be equal to most significant bit after rotate
+                    {r_junk, r_Op2, r_Carry} = {in_Val, in_Val, r_Carry} >> in_Shift_imm;
                 end
             end
         endcase
