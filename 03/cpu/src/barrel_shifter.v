@@ -1,7 +1,9 @@
 `include "Def_StructureParameter.v"
 `include "Def_BarrelShifter.v"
 
-// 32-bit
+// 32-bit barrel shifter
+// Not sure if this implementation is properly done. Should probably pipeline it and not use '>>'
+// and '<<'. Eg. https://www.cs.uregina.ca/Links/class-info/301/guili/BarrelShPipeline.html
 module barrel_shifter(in_Val, in_Shift_type, in_Shift_imm, in_C_flag, out_Op2, out_Carry);
     // in_Shift_imm: amount to be shifted by. if op2 is imm, amount = 4-bit rotate * 2, else it is
     //               5-bit shift amount
