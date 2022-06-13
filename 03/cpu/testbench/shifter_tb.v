@@ -23,7 +23,7 @@ module shifter_tb;
         in_Shift_type = `LogicalLeftShift;
         in_Shift_imm = 1;
         in_C_flag = 0;
-        if (out_Op2 != 32'd4)
+        if (out_Op2 != 32'd4 || out_Carry != 1'b0)
             $display("---- Test failed, got %d", out_Op2);
 
         #100;
@@ -43,7 +43,7 @@ module shifter_tb;
         in_Shift_imm = 1;
         in_C_flag = 0;
         #10;
-        if (out_Op2 != 32'd1)
+        if (out_Op2 != 32'd1 || out_Carry != 1'b0)
             $display("---- Test failed, got %d", out_Op2);
 
         #100;
@@ -57,13 +57,13 @@ module shifter_tb;
             $display("---- Test failed, got %d and %b", out_Op2, out_Carry);
 
         #100;
-        $display("ASR 132, #10 (with carry 1)");
+        $display("ASR 13244, #10 (with carry 1)");
         in_Val = 32'd13244;
         in_Shift_type = `ArithmeticRightShift;
         in_Shift_imm = 10;
         in_C_flag = 1;
         #10;
-        if (out_Op2 != 32'd12)
+        if (out_Op2 != 32'd12 || out_Carry != 1'b1)
             $display("---- Test failed, got %b and %b", out_Op2, out_Carry);
 
         #100;
@@ -73,7 +73,7 @@ module shifter_tb;
         in_Shift_imm = 0;
         in_C_flag = 0;
         #10;
-        if (out_Op2 != 32'h11111111)
+        if (out_Op2 != 32'h11111111 || out_Carry != 1'b1)
             $display("---- Test failed, got %b and %b", out_Op2, out_Carry);
 
         #100;
