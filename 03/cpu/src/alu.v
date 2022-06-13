@@ -19,6 +19,9 @@ module alu(in_Rn, in_Op2, in_Carry, in_Opcode, out_Y, out_CNZV);
     wire [`WordWidth-1:0] ad_Y;
     wire [3:0]            ad_CNZV;
 
+    assign out_Y = r_Y;
+    assign out_CNZV = r_CNZV;
+
     adder adder(ad_Rn, ad_Op2, ad_Carry, ad_Y, ad_CNZV);
 
     always @(*)
@@ -133,7 +136,4 @@ module alu(in_Rn, in_Op2, in_Carry, in_Opcode, out_Y, out_CNZV);
             end
         endcase
     end // always
-
-    assign out_Y = r_Y;
-    assign out_CNZV = r_CNZV;
 endmodule // alu
