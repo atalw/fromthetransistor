@@ -1,9 +1,11 @@
 `include "Def_StructureParameter.v"
 `include "Def_BarrelShifter.v"
 
-// 32-bit barrel shifter
-// Not sure if this implementation is properly done. Should probably pipeline it and not use '>>'
-// and '<<'. Eg. https://www.cs.uregina.ca/Links/class-info/301/guili/BarrelShPipeline.html
+// 32-bit barrel shifter used to shift and rotate n-bits within a single clock cycle.
+// https://en.wikipedia.org/wiki/Barrel_shifter
+//
+// Eg of a pipelined shifter (6 clock cycles) just for reference:
+// https://www.cs.uregina.ca/Links/class-info/301/guili/BarrelShPipeline.html
 module barrel_shifter(in_Val, in_Shift_type, in_Shift_imm, in_C_flag, out_Op2, out_Carry);
     // in_Shift_imm: amount to be shifted by. if op2 is imm, amount = 4-bit rotate * 2, else it is
     //               5-bit shift amount
@@ -14,14 +16,11 @@ module barrel_shifter(in_Val, in_Shift_type, in_Shift_imm, in_C_flag, out_Op2, o
     input  wire [1:0]            in_Shift_type;
     input  wire [4:0]            in_Shift_imm;
     input  wire                  in_C_flag;
-
     output wire [`WordWidth-1:0] out_Op2;
     output wire                  out_Carry;
 
     reg [`WordWidth-1:0] r_Op2;
     reg                  r_Carry;
-    reg                  r_Sign;
-    reg [`WordWidth-1:0] r_junk;
 
     assign out_Op2 = r_Op2;
     assign out_Carry = r_Carry;
@@ -73,7 +72,6 @@ module barrel_shifter(in_Val, in_Shift_type, in_Shift_imm, in_C_flag, out_Op2, o
                     if (in_Shift_imm == 0) begin
                         r_Carry = in_Val[0];
                         r_Op2 = {r_Carry, in_C_flag, in_Val[`WordWidth-1:2]};
-                        // {r_junk, r_Op2, r_Carry} = {in_Val, in_C_flag, in_Val} >> 1;
                     end
                 end
             endcase
@@ -83,6 +81,7 @@ module barrel_shifter(in_Val, in_Shift_type, in_Shift_imm, in_C_flag, out_Op2, o
             // operators for efficiency I think. Using shift operations felt like cheating. It's
             // there in git history if you want to check it out.
 
+            // Shift 16 bits
             if (in_Shift_imm[4] == 1) begin
                 case (in_Shift_type)
                     `LogicalLeftShift: begin
@@ -107,6 +106,7 @@ module barrel_shifter(in_Val, in_Shift_type, in_Shift_imm, in_C_flag, out_Op2, o
                 endcase
             end
 
+            // Shift 8 bits
             if (in_Shift_imm[3] == 1) begin
                 case (in_Shift_type)
                     `LogicalLeftShift: begin
@@ -131,6 +131,7 @@ module barrel_shifter(in_Val, in_Shift_type, in_Shift_imm, in_C_flag, out_Op2, o
                 endcase
             end
 
+            // Shift 4 bits
             if (in_Shift_imm[2] == 1) begin
                 case (in_Shift_type)
                     `LogicalLeftShift: begin
@@ -155,6 +156,7 @@ module barrel_shifter(in_Val, in_Shift_type, in_Shift_imm, in_C_flag, out_Op2, o
                 endcase
             end
 
+            // Shift 2 bits
             if (in_Shift_imm[1] == 1) begin
                 case (in_Shift_type)
                     `LogicalLeftShift: begin
@@ -179,6 +181,7 @@ module barrel_shifter(in_Val, in_Shift_type, in_Shift_imm, in_C_flag, out_Op2, o
                 endcase
             end
 
+            // Shift 1 bit
             if (in_Shift_imm[0] == 1) begin
                 case (in_Shift_type)
                     `LogicalLeftShift: begin
