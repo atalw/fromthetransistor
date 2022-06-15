@@ -6,12 +6,14 @@ module alu_tb;
 
     reg  [`WordWidth-1:0]  in_Rn;
     reg  [`WordWidth-1:0]  in_Op2;
-    reg                    in_Carry;
+    reg                    in_Barrel_arry;
     reg  [3:0]             in_Opcode;
+    reg  [3:0]             in_CNZV;
+    reg                    in_Set_cond;
     wire [`WordWidth-1:0]  out_Y;
     wire [3:0]             out_CNZV;
 
-    alu a(in_Rn, in_Op2, in_Carry, in_Opcode, out_Y, out_CNZV);
+    alu a(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_Y, out_CNZV);
 
     initial begin
         $dumpfile("alu.vcd");
@@ -23,14 +25,16 @@ module alu_tb;
         $display("ADD 1, 1");
         in_Rn = `WordWidth'd1;
         in_Op2 = `WordWidth'd1;
-        in_Carry = 1'b0;
+        in_Barrel_carry = 1'b0;
+        in_CNZV = 4'b0000;
+        in_Set_cond = 1'b1;
         in_Opcode = `ALUType_Add;
 
         #100;
         $display("ADD 2, 3");
         in_Rn = `WordWidth'd2;
         in_Op2 = `WordWidth'd3;
-        in_Carry = 1'b0;
+        in_Barrel_carry = 1'b0;
 
         #100;
         if (out_Y == `WordWidth'd5)
