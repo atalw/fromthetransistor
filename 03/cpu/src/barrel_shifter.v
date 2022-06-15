@@ -12,7 +12,7 @@ module barrel_shifter(in_Val, in_Shift_type, in_Shift_imm, in_C_flag, out_Op2, o
     // in_C_flag: C flag of CNZV (CPSR condition)
     // in_Val: value to be shifted. can be register content or imm
 
-    input  wire [`WordWidth-1:0] in_Val;
+    input  wire [`WordWidth-1:0] in_Val; // either register content or zero-padded imm8
     input  wire [1:0]            in_Shift_type;
     input  wire [4:0]            in_Shift_imm;
     input  wire                  in_C_flag;

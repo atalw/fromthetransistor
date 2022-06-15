@@ -2,11 +2,13 @@
 `include "Def_StructureParameter.v"
 `include "adder.v"
 
-module alu(in_Rn, in_Op2, in_Carry, in_Opcode, out_Y, out_CNZV);
+module alu(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_Y, out_CNZV);
     input   wire  [`WordWidth-1:0]  in_Rn;      // (operand 1) register
     input   wire  [`WordWidth-1:0]  in_Op2;     // (operand 2) shifted register or imm
-    input   wire                    in_Carry;   // carry from barrel shifter (status)
+    input   wire                    in_Barrel_carry;   // carry from barrel shifter (status)
     input   wire  [3:0]             in_Opcode;  // opcode
+    input   wire  [3:0]             in_CNZV;    // condition flags
+    input   wire                    in_Set_cond;   // S flag
     output  wire  [`WordWidth-1:0]  out_Y;      // result
     output  wire  [3:0]             out_CNZV;   // condition status register. eg out_CNZV[3] = c, out_CNZV[2] = n...
 
@@ -30,25 +32,29 @@ module alu(in_Rn, in_Op2, in_Carry, in_Opcode, out_Y, out_CNZV);
         ad_Op2 = `WordZero;
         ad_Carry = 1'b0;
         r_Y = `WordZero;
-        r_CNZV = 4'b0000;
+        r_CNZV = in_CNZV;
 
         case (in_Opcode)
             // AND: operand1 AND operand2
             // TST: as AND, but result is not written
             `ALUType_And, `ALUType_Tst: begin
                 r_Y = in_Rn & in_Op2;
-                r_CNZV[3] = in_Carry;
-                r_CNZV[2] = r_Y[`WordWidth-1];
-                r_CNZV[1] = (r_Y == 0);
+                if (in_Set_cond) begin
+                    r_CNZV[3] = in_Barrel_carry;
+                    r_CNZV[2] = r_Y[`WordWidth-1];
+                    r_CNZV[1] = (r_Y == 0);
+                end
             end
 
             // EOR: operand1 EOR operand2
             // TEQ: as EOR, but result is not written
             `ALUType_Eor, `ALUType_Teq: begin
                 r_Y = in_Rn ^ in_Op2;
-                r_CNZV[3] = in_Carry;
-                r_CNZV[2] = r_Y[`WordWidth-1];
-                r_CNZV[1] = (r_Y == 0);
+                if (in_Set_cond) begin
+                    r_CNZV[3] = in_Barrel_carry;
+                    r_CNZV[2] = r_Y[`WordWidth-1];
+                    r_CNZV[1] = (r_Y == 0);
+                end
             end
 
             // SUB: operand1 - operand2
@@ -56,7 +62,7 @@ module alu(in_Rn, in_Op2, in_Carry, in_Opcode, out_Y, out_CNZV);
             `ALUType_Sub, `ALUType_Cmp: begin
                 ad_Op2 = -in_Op2;
                 r_Y = ad_Y;
-                r_CNZV = ad_CNZV;
+                if (in_Set_cond) r_CNZV = ad_CNZV;
             end
 
             // operand2 - operand1
@@ -64,7 +70,7 @@ module alu(in_Rn, in_Op2, in_Carry, in_Opcode, out_Y, out_CNZV);
                 ad_Rn = -in_Rn;
                 ad_Op2 = in_Op2;
                 r_Y = ad_Y;
-                r_CNZV = ad_CNZV;
+                if (in_Set_cond) r_CNZV = ad_CNZV;
             end
 
             // ADD: operand1 + operand2
@@ -73,66 +79,74 @@ module alu(in_Rn, in_Op2, in_Carry, in_Opcode, out_Y, out_CNZV);
                 ad_Rn = in_Rn;
                 ad_Op2 = in_Op2;
                 r_Y = ad_Y;
-                r_CNZV = ad_CNZV;
+                if (in_Set_cond) r_CNZV = ad_CNZV;
             end
 
             // operand1 + operand2 + carry
             `ALUType_Adc: begin
                 ad_Rn = in_Rn;
                 ad_Op2 = in_Op2;
-                ad_Carry = in_Carry;
+                ad_Carry = in_Barrel_carry;
                 r_Y = ad_Y;
-                r_CNZV = ad_CNZV;
+                if (in_Set_cond) r_CNZV = ad_CNZV;
             end
 
             // operand1 - operand2 + carry - 1
             `ALUType_Sbc: begin
                 ad_Rn = in_Rn;
                 ad_Op2 = -in_Op2;
-                ad_Carry = in_Carry;
+                ad_Carry = in_Barrel_carry;
                 r_Y = ad_Y - 1;
-                r_CNZV = ad_CNZV;
+                if (in_Set_cond) r_CNZV = ad_CNZV;
             end
 
             // operand2 - operand1 + carry - 1
             `ALUType_Rsc: begin
                 ad_Rn = -in_Rn;
                 ad_Op2 = in_Op2;
-                ad_Carry = in_Carry;
+                ad_Carry = in_Barrel_carry;
                 r_Y = ad_Y - 1;
-                r_CNZV = ad_CNZV;
+                if (in_Set_cond) r_CNZV = ad_CNZV;
             end
 
             // operand1 OR operand2
             `ALUType_Orr: begin
                 r_Y = in_Rn | in_Op2;
-                r_CNZV[3] = in_Carry;
-                r_CNZV[2] = r_Y[`WordWidth-1];
-                r_CNZV[1] = (r_Y == 0);
+                if (in_Set_cond) begin
+                    r_CNZV[3] = in_Barrel_carry;
+                    r_CNZV[2] = r_Y[`WordWidth-1];
+                    r_CNZV[1] = (r_Y == 0);
+                end
             end
 
             // operand2 (operand1 is ignored)
             `ALUType_Mov: begin
                 r_Y = in_Op2;
-                r_CNZV[3] = in_Carry;
-                r_CNZV[2] = r_Y[`WordWidth-1];
-                r_CNZV[1] = (r_Y == 0);
+                if (in_Set_cond) begin
+                    r_CNZV[3] = in_Barrel_carry;
+                    r_CNZV[2] = r_Y[`WordWidth-1];
+                    r_CNZV[1] = (r_Y == 0);
+                end
             end
 
             // operand1 AND NOT operand2 (Bit clear)
             `ALUType_Bic: begin
                 r_Y = in_Rn & ~in_Op2;
-                r_CNZV[3] = in_Carry;
-                r_CNZV[2] = r_Y[`WordWidth-1];
-                r_CNZV[1] = (r_Y == 0);
+                if (in_Set_cond) begin
+                    r_CNZV[3] = in_Barrel_carry;
+                    r_CNZV[2] = r_Y[`WordWidth-1];
+                    r_CNZV[1] = (r_Y == 0);
+                end
             end
 
             // NOT operand2 (operand1 is ignored)
             `ALUType_Mvn: begin
                 r_Y = ~in_Op2;
-                r_CNZV[3] = in_Carry;
-                r_CNZV[2] = r_Y[`WordWidth-1];
-                r_CNZV[1] = (r_Y == 0);
+                if (in_Set_cond) begin
+                    r_CNZV[3] = in_Barrel_carry;
+                    r_CNZV[2] = r_Y[`WordWidth-1];
+                    r_CNZV[1] = (r_Y == 0);
+                end
             end
         endcase
     end // always
