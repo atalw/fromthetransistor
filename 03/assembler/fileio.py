@@ -10,6 +10,7 @@ class Io:
         path = os.path.join(os.getcwd(), f'{sys.argv[1]}')
         with open(path) as f:
             lines = f.readlines()
+            print(lines)
             return lines if lines is not None else []
 
     def write_file(bin_encodings):

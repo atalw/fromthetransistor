@@ -49,7 +49,7 @@ class Tokenizer:
 
     def parse_instructions(self, instructions) -> [[Token]]:
         all_tokens = []
-        instructions = instructions.split('\n')
+        #  instructions = instructions.split('\n')
 
         for instruction in instructions:
             literals = re.split(', | ', instruction)
