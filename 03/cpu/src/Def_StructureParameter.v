@@ -5,4 +5,4 @@
 `define ByteWidth 8
 `define WordZero 32'd0
 
-`define InsturctionWidth 32
+`define InstructionWidth 32
