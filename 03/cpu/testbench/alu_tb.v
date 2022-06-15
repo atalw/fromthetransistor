@@ -6,7 +6,7 @@ module alu_tb;
 
     reg  [`WordWidth-1:0]  in_Rn;
     reg  [`WordWidth-1:0]  in_Op2;
-    reg                    in_Barrel_arry;
+    reg                    in_Barrel_carry;
     reg  [3:0]             in_Opcode;
     reg  [3:0]             in_CNZV;
     reg                    in_Set_cond;

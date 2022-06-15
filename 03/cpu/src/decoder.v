@@ -39,8 +39,8 @@
 // (https://en.wikibooks.org/wiki/Microprocessor_Design/Instruction_Decoder)
 //
 // We're doing the second one.
-module decoder(in_Instruction, out_Instruction_type, out_Set_cond, out_Opcode, out_Rn, out_Rs, out_Rm, out_Rd, out_Imm,
-                out_Shift, out_Rotate, out_CNZV);
+module decoder(in_Instruction, out_Instruction_type, out_Set_cond, out_Opcode, out_Rn, out_Rs, out_Rm,
+    out_Rd, out_Imm, out_Shift_val, out_Shift_type, out_Rotate, out_CNZV);
 
     input wire [`InstructionWidth-1:0] in_Instruction;
     output wire [3:0] out_Instruction_type;
@@ -50,8 +50,9 @@ module decoder(in_Instruction, out_Instruction_type, out_Set_cond, out_Opcode, o
     output wire [3:0] out_Rs; // only used in mul and mla (reg address)
     output wire [3:0] out_Rm; // 2nd operand (reg address)
     output wire [3:0] out_Rd; // destination register
-    output wire [7:0] out_Imm; // unsigned 8-bit immediate value
-    output wire [7:0] out_Shift; // shift to be applied to Rm
+    output wire [`WordWidth-1:0] out_Imm; // unsigned 8-bit immediate value
+    output wire [4:0] out_Shift_val; // shift to be applied to Rm
+    output wire [1:0] out_Shift_type; // shift type
     output wire [3:0] out_Rotate; // shift to be applied to imm
     output wire [3:0] out_CNZV; // condition flags
 
@@ -63,7 +64,8 @@ module decoder(in_Instruction, out_Instruction_type, out_Set_cond, out_Opcode, o
     reg [3:0] r_Rm;
     reg [3:0] r_Rd;
     reg [7:0] r_Imm;
-    reg [7:0] r_Shift;
+    reg [7:0] r_Shift_val;
+    reg [1:0] r_Shift_type;
     reg [3:0] r_Rotate;
     reg [3:0] r_CNZV;
 
@@ -75,8 +77,10 @@ module decoder(in_Instruction, out_Instruction_type, out_Set_cond, out_Opcode, o
     assign out_Rm = r_Rm;
     assign out_Rd = r_Rd;
     assign out_Imm = r_Imm;
-    assign out_Shift = r_Shift;
+    assign out_Shift = r_Shift_val;
+    assign out_Shift_type = r_Shift_type;
     assign out_Rotate = r_Rotate;
+    assign out_CNZV = r_CNZV;
 
     function [3:0] classify_instr(input instruction);
         begin
@@ -125,21 +129,27 @@ module decoder(in_Instruction, out_Instruction_type, out_Set_cond, out_Opcode, o
                     r_Rn = in_Instruction[19:16];
                     r_Rd = in_Instruction[15:12];
                     if (in_Instruction[25] == 0) begin  // operand 2 is a reg
-                        r_Rm = in_Instruction[3:0];
-                        r_Shift = in_Instruction[11:4];
+                        if (in_Instruction[4] == 0) begin
+                            r_Shift_val = in_Instruction[11:7];
+                        end else begin
+                            r_Rm = in_Instruction[3:0];
+                        end
+                        r_Shift_type = in_Instruction[6:5];
                     end else begin // operand 2 is an imm value
-                        r_Imm = in_Instruction[7:0];
-                        r_Rotate = in_Instruction[11:8];
+                        r_Imm = {{24{1'b0}}, in_Instruction[7:0]};
+                        r_Rotate = in_Instruction[11:8] * 2;
+                        r_Shift_type = 2'b11;
                     end
                 end
             endcase
         end
     endtask
 
-
     always @(in_Instruction) begin
+        $display("Result is uh oh %b", in_Instruction);
         r_Instruction_type = classify_instr(in_Instruction);
         extract_data(r_Instruction_type);
+        $display("Result is uh oh %d", r_Instruction_type);
     end
 endmodule
 

@@ -23,6 +23,10 @@ Spec:
 - [Netlist](https://en.wikipedia.org/wiki/Netlist)
 - [Control Unit](https://en.wikipedia.org/wiki/Control_unit)
 - [CPU cache](https://en.wikipedia.org/wiki/CPU_cache)
+- [SRAM](https://en.wikipedia.org/wiki/Static_random-access_memory)
+- [Dual-ported RAM](https://en.wikipedia.org/wiki/Dual-ported_RAM)
+- [Register file](https://en.wikipedia.org/wiki/Register_file)
+- [Interrupt request](https://en.wikipedia.org/wiki/Interrupt_request_(PC_architecture))
 
 ### Additional
 

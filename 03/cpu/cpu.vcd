@@ -1,5 +1,5 @@
 $date
-	Tue Jun 14 21:44:05 2022
+	Wed Jun 15 19:57:06 2022
 $end
 $version
 	Icarus Verilog
@@ -7,99 +7,150 @@ $end
 $timescale
 	1s
 $end
-$scope module control_unit $end
-$var wire 32 ! in_Instruction [31:0] $end
-$var wire 32 " in_Op2_val [31:0] $end
-$var wire 32 # in_Rn_val [31:0] $end
-$var wire 1 $ in_Set_cond $end
-$var wire 5 % in_Shift_imm [4:0] $end
-$var wire 2 & in_Shift_type [1:0] $end
-$var wire 4 ' out_Instr_CNZV [3:0] $end
-$var wire 8 ( out_Shift [7:0] $end
-$var wire 1 ) out_Set_cond $end
-$var wire 4 * out_Rs [3:0] $end
-$var wire 4 + out_Rotate [3:0] $end
-$var wire 4 , out_Rn [3:0] $end
-$var wire 4 - out_Rm [3:0] $end
-$var wire 4 . out_Rd [3:0] $end
-$var wire 4 / out_Opcode [3:0] $end
-$var wire 32 0 out_Op2_val [31:0] $end
-$var wire 4 1 out_Instruction_type [3:0] $end
-$var wire 8 2 out_Imm [7:0] $end
-$var wire 1 3 out_Carry $end
-$var wire 4 4 out_CNZV [3:0] $end
-$var wire 32 5 out_Alu_res [31:0] $end
-$scope module alu $end
-$var wire 4 6 in_CNZV [3:0] $end
-$var wire 32 7 in_Rn [31:0] $end
-$var wire 1 $ in_Set_cond $end
-$var wire 4 8 out_CNZV [3:0] $end
-$var wire 32 9 out_Y [31:0] $end
-$var wire 4 : in_Opcode [3:0] $end
-$var wire 32 ; in_Op2 [31:0] $end
-$var wire 1 3 in_Barrel_carry $end
-$var wire 32 < ad_Y [31:0] $end
-$var wire 4 = ad_CNZV [3:0] $end
-$var reg 1 > ad_Carry $end
-$var reg 32 ? ad_Op2 [31:0] $end
-$var reg 32 @ ad_Rn [31:0] $end
-$var reg 4 A r_CNZV [3:0] $end
-$var reg 32 B r_Y [31:0] $end
-$scope module adder $end
-$var wire 1 > in_Carry $end
-$var wire 32 C in_Op2 [31:0] $end
-$var wire 32 D in_Rn [31:0] $end
-$var wire 4 E out_CNZV [3:0] $end
-$var wire 32 F out_Y [31:0] $end
-$var reg 4 G r_CNZV [3:0] $end
-$var reg 32 H r_Y [31:0] $end
-$var integer 32 I idx [31:0] $end
-$scope function one_bit_add $end
-$var reg 1 J a $end
-$var reg 1 K b $end
-$var reg 1 L carry $end
-$upscope $end
-$upscope $end
-$upscope $end
-$scope module decoder $end
-$var wire 32 M in_Instruction [31:0] $end
-$var wire 4 N out_CNZV [3:0] $end
-$var wire 8 O out_Imm [7:0] $end
-$var wire 4 P out_Instruction_type [3:0] $end
-$var wire 4 Q out_Opcode [3:0] $end
-$var wire 4 R out_Rd [3:0] $end
-$var wire 4 S out_Rm [3:0] $end
-$var wire 4 T out_Rn [3:0] $end
-$var wire 4 U out_Rotate [3:0] $end
-$var wire 4 V out_Rs [3:0] $end
-$var wire 1 ) out_Set_cond $end
-$var wire 8 W out_Shift [7:0] $end
-$var reg 4 X r_CNZV [3:0] $end
-$var reg 8 Y r_Imm [7:0] $end
-$var reg 4 Z r_Instruction_type [3:0] $end
-$var reg 4 [ r_Opcode [3:0] $end
-$var reg 4 \ r_Rd [3:0] $end
-$var reg 4 ] r_Rm [3:0] $end
-$var reg 4 ^ r_Rn [3:0] $end
-$var reg 4 _ r_Rotate [3:0] $end
-$var reg 4 ` r_Rs [3:0] $end
-$var reg 1 a r_Set_cond $end
-$var reg 8 b r_Shift [7:0] $end
-$scope function classify_instr $end
-$var reg 1 c instruction $end
-$upscope $end
-$scope task extract_data $end
-$var reg 1 d instruction_type $end
-$upscope $end
-$upscope $end
+$scope module shifter_tb $end
+$var wire 32 ! out_Op2 [31:0] $end
+$var wire 1 " out_Carry $end
+$var reg 1 # in_C_flag $end
+$var reg 32 $ in_Imm_val [31:0] $end
+$var reg 32 % in_Reg_val [31:0] $end
+$var reg 4 & in_Rotate [3:0] $end
+$var reg 2 ' in_Shift_type [1:0] $end
+$var reg 5 ( in_Shift_val [4:0] $end
 $scope module shifter $end
-$var wire 1 e in_C_flag $end
-$var wire 5 f in_Shift_imm [4:0] $end
-$var wire 2 g in_Shift_type [1:0] $end
-$var wire 32 h in_Val [31:0] $end
-$var wire 1 3 out_Carry $end
-$var wire 32 i out_Op2 [31:0] $end
-$var reg 1 j r_Carry $end
-$var reg 32 k r_Op2 [31:0] $end
+$var wire 1 # in_C_flag $end
+$var wire 32 ) in_Imm_val [31:0] $end
+$var wire 32 * in_Reg_val [31:0] $end
+$var wire 4 + in_Rotate [3:0] $end
+$var wire 2 , in_Shift_type [1:0] $end
+$var wire 5 - in_Shift_val [4:0] $end
+$var wire 1 " out_Carry $end
+$var wire 32 . out_Op2 [31:0] $end
+$var reg 1 / r_Carry $end
+$var reg 32 0 r_Op2 [31:0] $end
+$scope task exec_shift $end
+$var reg 5 1 shift_val [4:0] $end
+$var reg 32 2 val [31:0] $end
 $upscope $end
 $upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+bx 2
+bx 1
+bx 0
+x/
+bx .
+bx -
+bx ,
+bx +
+bx *
+bx )
+bx (
+bx '
+bx &
+bx %
+bx $
+x#
+x"
+bx !
+$end
+#100
+0"
+0/
+b100 !
+b100 .
+b100 0
+b1 1
+b10 2
+0#
+b1 (
+b1 -
+b0 '
+b0 ,
+b10 %
+b10 *
+#210
+b10 !
+b10 .
+b10 0
+1"
+1/
+b0 1
+1#
+b0 (
+b0 -
+#320
+b1 !
+b1 .
+b1 0
+0"
+0/
+b1 1
+0#
+b1 (
+b1 -
+b1 '
+b1 ,
+#430
+b0 !
+b0 .
+b0 0
+b0 1
+b0 (
+b0 -
+#540
+1"
+1/
+b1100 !
+b1100 .
+b1100 0
+b1010 1
+b11001110111100 2
+1#
+b1010 (
+b1010 -
+b10 '
+b10 ,
+b11001110111100 %
+b11001110111100 *
+#650
+b11111111111111111111111111111111 !
+b11111111111111111111111111111111 .
+b11111111111111111111111111111111 0
+b0 1
+b11111111101101000011010010000000 2
+0#
+b0 (
+b0 -
+b11111111101101000011010010000000 %
+b11111111101101000011010010000000 *
+#760
+b10000000000000000000000000001100 !
+b10000000000000000000000000001100 .
+b10000000000000000000000000001100 0
+b100 1
+b11001000 2
+1#
+b100 (
+b100 -
+b11 '
+b11 ,
+b11001000 %
+b11001000 *
+#870
+b110010 !
+b110010 .
+b110010 0
+0"
+0/
+b0 1
+0#
+b0 (
+b0 -
+#980
+b1000000000000000000000000110010 !
+b1000000000000000000000000110010 .
+b1000000000000000000000000110010 0
+1#
+#1090

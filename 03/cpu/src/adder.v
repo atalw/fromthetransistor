@@ -37,8 +37,8 @@ module adder(in_Rn, in_Op2, in_Carry, out_Y, out_CNZV);
 
     always @(in_Rn or in_Op2 or in_Carry)
     begin
-        r_Y = `WordWidth'd0;
-        r_CNZV = 4'b0000;
+        // r_Y = `WordWidth'd0;
+        // r_CNZV = 4'b0000;
 
         // Add operands bit by bit taking care of carry
         for (idx = 0; idx < `WordWidth; idx = idx + 1)
