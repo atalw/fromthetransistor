@@ -39,11 +39,13 @@
 // (https://en.wikibooks.org/wiki/Microprocessor_Design/Instruction_Decoder)
 //
 // We're doing the second one.
-module decoder(in_Instruction, out_Instruction_type, out_Rn, out_Rs, out_Rm, out_Imm,
-                out_Shift, out_Rotate, out_Rd);
+module decoder(in_Instruction, out_Instruction_type, out_Set_cond, out_Opcode, out_Rn, out_Rs, out_Rm, out_Rd, out_Imm,
+                out_Shift, out_Rotate, out_CNZV);
 
     input wire [`InstructionWidth-1:0] in_Instruction;
     output wire [3:0] out_Instruction_type;
+    output wire  out_Set_cond; // bit 20 -> 'S' (set condition codes) or 'L' (Load/store/link)
+    output wire [3:0] out_Opcode; // ALU opcode
     output wire [3:0] out_Rn; // 1st operand (reg address)
     output wire [3:0] out_Rs; // only used in mul and mla (reg address)
     output wire [3:0] out_Rm; // 2nd operand (reg address)
@@ -51,9 +53,11 @@ module decoder(in_Instruction, out_Instruction_type, out_Rn, out_Rs, out_Rm, out
     output wire [7:0] out_Imm; // unsigned 8-bit immediate value
     output wire [7:0] out_Shift; // shift to be applied to Rm
     output wire [3:0] out_Rotate; // shift to be applied to imm
-    output wire  out_condition; // 'S' value: set condition codes
+    output wire [3:0] out_CNZV; // condition flags
 
     reg [3:0] r_Instruction_type;
+    reg r_Set_cond;
+    reg [3:0] r_Opcode;
     reg [3:0] r_Rn;
     reg [3:0] r_Rs;
     reg [3:0] r_Rm;
@@ -61,9 +65,11 @@ module decoder(in_Instruction, out_Instruction_type, out_Rn, out_Rs, out_Rm, out
     reg [7:0] r_Imm;
     reg [7:0] r_Shift;
     reg [3:0] r_Rotate;
-    reg r_Condition;
+    reg [3:0] r_CNZV;
 
     assign out_Instruction_type = r_Instruction_type;
+    assign out_Set_cond = r_Set_cond;
+    assign out_Opcode = r_Opcode;
     assign out_Rn = r_Rn;
     assign out_Rs = r_Rs;
     assign out_Rm = r_Rm;
@@ -71,7 +77,6 @@ module decoder(in_Instruction, out_Instruction_type, out_Rn, out_Rs, out_Rm, out
     assign out_Imm = r_Imm;
     assign out_Shift = r_Shift;
     assign out_Rotate = r_Rotate;
-    assign out_Condition = r_Condition;
 
     function [3:0] classify_instr(input instruction);
         begin
@@ -92,7 +97,7 @@ module decoder(in_Instruction, out_Instruction_type, out_Rn, out_Rs, out_Rm, out
                 if (in_Instruction[25] == 0 || (in_Instruction[25] == 1 && in_Instruction[4] == 0)) begin
                     classify_instr = `single_data_transfer;
                 end else
-                    classify_instr = `undefined
+                    classify_instr = `undefined;
                 else if (in_Instruction[27:4] == 24'b000100101111111111110001)
                     classify_instr = `branch_and_exchange;
                 else if (in_Instruction[27:23] == 5'b00010 && in_Instruction[11:4] == 8'b00001001) begin
@@ -109,41 +114,32 @@ module decoder(in_Instruction, out_Instruction_type, out_Rn, out_Rs, out_Rm, out
         end
     endfunction
 
-    function extract_data(input instruction_type);
+    task extract_data(input instruction_type);
         begin
+            r_CNZV = in_Instruction[31:28];
+            r_Set_cond = in_Instruction[20];
+
             case (instruction_type)
                 `data_proc: begin
                     r_Opcode = in_Instruction[24:21];
                     r_Rn = in_Instruction[19:16];
                     r_Rd = in_Instruction[15:12];
-                    if (in_Instruction[25] == 0) begin 
+                    if (in_Instruction[25] == 0) begin  // operand 2 is a reg
                         r_Rm = in_Instruction[3:0];
                         r_Shift = in_Instruction[11:4];
-                    end else begin
+                    end else begin // operand 2 is an imm value
                         r_Imm = in_Instruction[7:0];
                         r_Rotate = in_Instruction[11:8];
                     end
                 end
             endcase
         end
-    endfunction
+    endtask
 
 
-    always (posedge in_Clock) begin
+    always @(in_Instruction) begin
         r_Instruction_type = classify_instr(in_Instruction);
         extract_data(r_Instruction_type);
-
-        case (r_Instruction_type)
-            `data_proc: begin
-                r_Rn_Val = load_reg(r_Rn);
-                if (in_Instruction[25] == 0) begin // operand 2 is a register
-                    r_Rm = in_Instruction[3:0];
-                    r_Op2_Val = load_reg(r_Rm);
-
-                end else begin // operand 2 is an imm value
-                end
-            end
-        endcase
     end
 endmodule
 
