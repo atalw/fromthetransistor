@@ -15,7 +15,7 @@ module shifter_tb;
         out_Op2, out_Carry);
 
     initial begin
-        $dumpfile("cpu.vcd");
+        $dumpfile("shifter.vcd");
         $dumpvars;
     end
 

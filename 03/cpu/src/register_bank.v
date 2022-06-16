@@ -25,7 +25,8 @@
 
 
 // 2 read ports and 1 write port corresponding to the ALU operations
-module register_bank(clock, in_Read_address1, in_Read_address2, in_Write_address1, in_Write_data1, out_Data1, out_Data2);
+module register_bank(clock, in_Read_address1, in_Read_address2, in_Write_address1, in_Write_data1, 
+    in_Write_enable, out_Data1, out_Data2);
 
     // Since reading of a register-stored value does not change the state of the register, no 
     // "safety mechanism" is needed to prevent inadvertent overwriting of stored data, and we need 
@@ -127,8 +128,10 @@ module register_bank(clock, in_Read_address1, in_Read_address2, in_Write_address
 
 
     always @(negedge clock) begin
-        if (in_Write_enable == 1)
+        if (in_Write_enable == 1) begin
             R[in_Write_address1] = in_Write_data1;
+            $monitor("reg0 %h", R[0]);
+        end
     end
 
 endmodule

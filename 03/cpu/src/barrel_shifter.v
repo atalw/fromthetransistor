@@ -29,9 +29,9 @@ module barrel_shifter(in_Reg_val, in_Imm_val, in_Shift_val, in_Rotate, in_Shift_
     assign out_Op2 = r_Op2;
     assign out_Carry = r_Carry;
 
-    task exec_shift(input [`WordWidth-1:0] val, input [4:0] shift_val);
+    task exec_shift(input [`WordWidth-1:0] val, input [4:0] shift_val, is_reg);
         begin
-            if (shift_val == 0) begin
+            if (shift_val == 0 && is_reg) begin
                 case (in_Shift_type)
                     // LSL #0 is a special case, where the shifter carry out is the old value
                     // of the CPSR C flag. The contents of Rm are used directly as the second operand.
@@ -209,9 +209,9 @@ module barrel_shifter(in_Reg_val, in_Imm_val, in_Shift_val, in_Rotate, in_Shift_
 
     always @(in_Reg_val or in_Shift_val or in_Imm_val or in_Rotate or in_C_flag) begin
         if (in_Reg_val[0] !== 1'bX && in_Shift_val[0] !== 1'bX)
-            exec_shift(in_Reg_val, in_Shift_val);
+            exec_shift(in_Reg_val, in_Shift_val, 1'b1);
         else if (in_Imm_val[0] !== 1'bX && in_Rotate[0] !== 1'bX)
-            exec_shift(in_Imm_val, in_Rotate);
+            exec_shift(in_Imm_val, in_Rotate, 1'b0);
 
     end
 endmodule

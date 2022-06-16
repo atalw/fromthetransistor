@@ -50,7 +50,7 @@ module control_unit(clock, in_Instruction);
     wire [`WordWidth-1:0] in_Rn_val;
     wire [`WordWidth-1:0] in_Op2_val; // goes to barrel shifter
 
-    register_bank register_bank(clock, out_Rn, out_Rm, out_Rd, out_Alu_res, in_Rn_val, in_Op2_val);
+    register_bank register_bank(clock, out_Rn, out_Rm, out_Rd, out_Alu_res, out_Writeback, in_Rn_val, in_Op2_val);
 
     // --------------------------------
     // ----------- Execute ------------
@@ -66,8 +66,9 @@ module control_unit(clock, in_Instruction);
     // ------ ALU ------
     wire [`WordWidth-1:0] out_Alu_res;
     wire [3:0] out_CNZV;
+    wire out_Writeback;
 
     alu alu(in_Rn_val, out_Op2_val, out_Carry, out_Opcode, out_Instr_CNZV, out_Set_cond, out_Alu_res,
-        out_CNZV);
+        out_CNZV, out_Writeback);
 
 endmodule

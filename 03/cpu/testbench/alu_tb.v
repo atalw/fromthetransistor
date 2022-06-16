@@ -12,8 +12,9 @@ module alu_tb;
     reg                    in_Set_cond;
     wire [`WordWidth-1:0]  out_Y;
     wire [3:0]             out_CNZV;
+    wire                   out_Writeback;
 
-    alu a(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_Y, out_CNZV);
+    alu a(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_Y, out_CNZV, out_Writeback);
 
     initial begin
         $dumpfile("alu.vcd");

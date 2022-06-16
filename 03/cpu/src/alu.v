@@ -2,7 +2,7 @@
 `include "Def_StructureParameter.v"
 `include "adder.v"
 
-module alu(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_Y, out_CNZV);
+module alu(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_Y, out_CNZV, out_Writeback);
     input   wire  [`WordWidth-1:0]  in_Rn;      // (operand 1) register
     input   wire  [`WordWidth-1:0]  in_Op2;     // (operand 2) shifted register or imm
     input   wire                    in_Barrel_carry;   // carry from barrel shifter (status)
@@ -11,9 +11,11 @@ module alu(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_
     input   wire                    in_Set_cond;   // S flag
     output  wire  [`WordWidth-1:0]  out_Y;      // result
     output  wire  [3:0]             out_CNZV;   // condition status register. eg out_CNZV[3] = c, out_CNZV[2] = n...
+    output  wire                    out_Writeback;
 
     reg [`WordWidth-1:0]  r_Y;
     reg [3:0]             r_CNZV;
+    reg                   r_Writeback;
     // Adder registers
     reg [`WordWidth-1:0]  ad_Rn;
     reg [`WordWidth-1:0]  ad_Op2;
@@ -23,6 +25,7 @@ module alu(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_
 
     assign out_Y = r_Y;
     assign out_CNZV = r_CNZV;
+    assign out_Writeback = r_Writeback;
 
     adder adder(ad_Rn, ad_Op2, ad_Carry, ad_Y, ad_CNZV);
 
@@ -36,7 +39,6 @@ module alu(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_
 
         case (in_Opcode)
             // AND: operand1 AND operand2
-            // TST: as AND, but result is not written
             `ALUType_And, `ALUType_Tst: begin
                 r_Y = in_Rn & in_Op2;
                 if (in_Set_cond) begin
@@ -44,10 +46,21 @@ module alu(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_
                     r_CNZV[2] = r_Y[`WordWidth-1];
                     r_CNZV[1] = (r_Y == 0);
                 end
+                r_Writeback = 1'b1;
+            end
+
+            // TST: same as AND, but result is not written
+            `ALUType_Tst: begin
+                r_Y = in_Rn & in_Op2;
+                if (in_Set_cond) begin
+                    r_CNZV[3] = in_Barrel_carry;
+                    r_CNZV[2] = r_Y[`WordWidth-1];
+                    r_CNZV[1] = (r_Y == 0);
+                end
+                r_Writeback = 1'b0;
             end
 
             // EOR: operand1 EOR operand2
-            // TEQ: as EOR, but result is not written
             `ALUType_Eor, `ALUType_Teq: begin
                 r_Y = in_Rn ^ in_Op2;
                 if (in_Set_cond) begin
@@ -55,14 +68,34 @@ module alu(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_
                     r_CNZV[2] = r_Y[`WordWidth-1];
                     r_CNZV[1] = (r_Y == 0);
                 end
+                r_Writeback = 1'b1;
+            end
+
+            // TEQ: same as EOR, but result is not written
+            `ALUType_Teq: begin
+                r_Y = in_Rn ^ in_Op2;
+                if (in_Set_cond) begin
+                    r_CNZV[3] = in_Barrel_carry;
+                    r_CNZV[2] = r_Y[`WordWidth-1];
+                    r_CNZV[1] = (r_Y == 0);
+                end
+                r_Writeback = 1'b0;
             end
 
             // SUB: operand1 - operand2
-            // CMP: as SUB, but result is not written
             `ALUType_Sub, `ALUType_Cmp: begin
                 ad_Op2 = -in_Op2;
                 r_Y = ad_Y;
                 if (in_Set_cond) r_CNZV = ad_CNZV;
+                r_Writeback = 1'b1;
+            end
+
+            // CMP: same as SUB, but result is not written
+            `ALUType_Cmp: begin
+                ad_Op2 = -in_Op2;
+                r_Y = ad_Y;
+                if (in_Set_cond) r_CNZV = ad_CNZV;
+                r_Writeback = 1'b0;
             end
 
             // operand2 - operand1
@@ -71,6 +104,7 @@ module alu(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_
                 ad_Op2 = in_Op2;
                 r_Y = ad_Y;
                 if (in_Set_cond) r_CNZV = ad_CNZV;
+                r_Writeback = 1'b1;
             end
 
             // ADD: operand1 + operand2
@@ -80,6 +114,7 @@ module alu(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_
                 ad_Op2 = in_Op2;
                 r_Y = ad_Y;
                 if (in_Set_cond) r_CNZV = ad_CNZV;
+                r_Writeback = 1'b1;
             end
 
             // operand1 + operand2 + carry
@@ -89,6 +124,7 @@ module alu(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_
                 ad_Carry = in_Barrel_carry;
                 r_Y = ad_Y;
                 if (in_Set_cond) r_CNZV = ad_CNZV;
+                r_Writeback = 1'b1;
             end
 
             // operand1 - operand2 + carry - 1
@@ -98,6 +134,7 @@ module alu(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_
                 ad_Carry = in_Barrel_carry;
                 r_Y = ad_Y - 1;
                 if (in_Set_cond) r_CNZV = ad_CNZV;
+                r_Writeback = 1'b1;
             end
 
             // operand2 - operand1 + carry - 1
@@ -107,6 +144,7 @@ module alu(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_
                 ad_Carry = in_Barrel_carry;
                 r_Y = ad_Y - 1;
                 if (in_Set_cond) r_CNZV = ad_CNZV;
+                r_Writeback = 1'b1;
             end
 
             // operand1 OR operand2
@@ -117,6 +155,7 @@ module alu(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_
                     r_CNZV[2] = r_Y[`WordWidth-1];
                     r_CNZV[1] = (r_Y == 0);
                 end
+                r_Writeback = 1'b1;
             end
 
             // operand2 (operand1 is ignored)
@@ -127,6 +166,7 @@ module alu(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_
                     r_CNZV[2] = r_Y[`WordWidth-1];
                     r_CNZV[1] = (r_Y == 0);
                 end
+                r_Writeback = 1'b1;
             end
 
             // operand1 AND NOT operand2 (Bit clear)
@@ -137,6 +177,7 @@ module alu(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_
                     r_CNZV[2] = r_Y[`WordWidth-1];
                     r_CNZV[1] = (r_Y == 0);
                 end
+                r_Writeback = 1'b1;
             end
 
             // NOT operand2 (operand1 is ignored)
@@ -147,6 +188,7 @@ module alu(in_Rn, in_Op2, in_Barrel_carry, in_Opcode, in_CNZV, in_Set_cond, out_
                     r_CNZV[2] = r_Y[`WordWidth-1];
                     r_CNZV[1] = (r_Y == 0);
                 end
+                r_Writeback = 1'b1;
             end
         endcase
     end // always
