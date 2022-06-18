@@ -11,6 +11,27 @@ Spec:
 - [Von Neumann arch](https://en.wikipedia.org/wiki/Von_Neumann_architecture) with a 32-bit data bus
 - 32-bit ALU with Adder and Barrel Shifter
 
+#### How to run
+
+Using Icarus verilog for compilation. From the root cpu directory,
+```
+iverilog -g2012 -I src/ -o cpu.vvp testbench/control_unit_tb.sv
+```
+
+Replace testbench file with `alu.v`, `shifter.v`, etc.
+
+Next, run vvp to simulate.
+```
+vvp cpu.vvp +firmware=firmware.s
+```
+
+`firmware.s` is the set of instructions in hex (should probably be bin?)
+
+View signals using GTKWave.
+```
+gtkwave cpu.vcd
+```
+
 #### Concepts
 
 - [ARM7](https://en.wikipedia.org/wiki/ARM7)
