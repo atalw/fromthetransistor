@@ -3,6 +3,7 @@
 
 module control_unit_tb;
     reg clock;
+    reg nreset;
     reg [13:0] pc;
 
     initial begin
@@ -10,7 +11,7 @@ module control_unit_tb;
         $dumpvars;
     end
 
-    control_unit control_unit(clock, pc);
+    control_unit control_unit(clock, nreset, pc);
 
     reg [3:0] in_Rn;
     reg [3:0] in_Rm;
@@ -22,6 +23,7 @@ module control_unit_tb;
     initial begin
         string firmware;
         clock = 0;
+        nreset = 0;
 
         $display("Loading instruction set");
         if ($value$plusargs("firmware=%s", firmware)) begin
@@ -32,6 +34,7 @@ module control_unit_tb;
         end
 
         $readmemh(firmware, control_unit.ram.mem);
+        nreset = 1;
     end
 
     always begin

@@ -12,77 +12,78 @@
 // 4. Memory (Mem): load/store + update PC with destination address or nothing
 // 5. Write back (WB): place results in the appropriate register
 
-module control_unit(clock, pc);
+module control_unit(clock, nreset, pc);
 
     input wire clock;
+    input wire nreset;
     output reg [13:0] pc;
 
     // -------------------------------
     // ------ Instruction Fetch ------
     // -------------------------------
 
-    reg [13:0] in_Addr;
-    wire in_Write_ram;
-    reg [`WordWidth-1:0] in_Wdata;
-    reg [1:0] in_Size;
-    wire [`InstructionWidth-1:0] out_Instruction;
+    reg [13:0]                      ram_Addr;
+    wire                            ram_Write_enable;
+    reg [`WordWidth-1:0]            ram_Wdata;
+    reg [1:0]                       ram_Size;
+    wire [`InstructionWidth-1:0]    w_Instruction;
 
-    ram ram(clock, in_Addr, in_Write_ram, in_Wdata, in_Size, out_Instruction);
+    ram ram(clock, ram_Addr, ram_Write_enable, ram_Wdata, ram_Size, w_Instruction);
 
     // --------------------------------
     // ------ Instruction Decode ------
     // --------------------------------
 
     // ------ Decoder ------
-    wire [3:0]              out_Instruction_type;
-    wire                    out_Set_cond; // bit 20 -> 'S' (set condition codes) or 'L' (Load/store/link)
-    wire [3:0]              out_Opcode;
-    wire [3:0]              out_Rn; // 1st operand (reg address)
-    wire [3:0]              out_Rs; // only used in mul and mla (reg address)
-    wire [3:0]              out_Rm; // 2nd operand (reg address)
-    wire [3:0]              out_Rd; // destination register
-    wire [`WordWidth-1:0]   out_Imm_val; // unsigned 8-bit immediate value zero-padded
-    wire [4:0]              out_Shift_val; // shift to be applied to Rm
-    wire [1:0]              out_Shift_type;
-    wire [3:0]              out_Rotate; // shift to be applied to imm
-    wire [3:0]              out_Instr_CNZV; // condition flags
+    wire [3:0]              w_Instruction_type;
+    wire                    w_Set_cond; // bit 20 -> 'S' (set condition codes) or 'L' (Load/store/link)
+    wire [3:0]              w_Opcode;
+    wire [3:0]              w_Rn; // 1st operand (reg address)
+    wire [3:0]              w_Rs; // only used in mul and mla (reg address)
+    wire [3:0]              w_Rm; // 2nd operand (reg address)
+    wire [3:0]              w_Rd; // destination register
+    wire [`WordWidth-1:0]   w_Imm_val; // unsigned 8-bit immediate value zero-padded
+    wire [4:0]              w_Shift_val; // shift to be applied to Rm
+    wire [1:0]              w_Shift_type;
+    wire [3:0]              w_Rotate; // shift to be applied to imm
+    wire [3:0]              w_Instr_CNZV; // condition flags
 
-    decoder decoder(out_Instruction, out_Instruction_type, out_Set_cond, out_Opcode, out_Rn, out_Rs, 
-        out_Rm, out_Rd, out_Imm_val, out_Shift_val, out_Shift_type, out_Rotate, out_Instr_CNZV);
+    decoder decoder(w_Instruction, w_Instruction_type, w_Set_cond, w_Opcode, w_Rn, w_Rs, 
+        w_Rm, w_Rd, w_Imm_val, w_Shift_val, w_Shift_type, w_Rotate, w_Instr_CNZV);
 
 
     // ------ Register load ------
     wire [`WordWidth-1:0] in_Rn_val;
     wire [`WordWidth-1:0] in_Op2_val; // goes to barrel shifter
+    wire [`WordWidth-1:0] w_Alu_res;
+    wire                  w_Writeback;
 
-    register_bank register_bank(clock, out_Rn, out_Rm, out_Rd, out_Alu_res, out_Writeback, in_Rn_val, in_Op2_val);
+    register_bank register_bank(clock, w_Rn, w_Rm, w_Rd, w_Alu_res, w_Writeback, in_Rn_val, in_Op2_val);
 
     // --------------------------------
     // ----------- Execute ------------
     // --------------------------------
 
     // ------ Barrel Shifter ------
-    wire [`WordWidth-1:0] out_Op2_val; // shifted val that goes from barrel to alu
-    wire                  out_Carry;
+    wire [`WordWidth-1:0] w_Op2_val; // shifted val that goes from barrel to alu
+    wire                  w_Carry;
 
-    barrel_shifter shifter(in_Op2_val, out_Imm_val, out_Shift_val, out_Rotate, out_Shift_type,
-        out_Instr_CNZV[3], out_Op2_val, out_Carry);
+    barrel_shifter shifter(in_Op2_val, w_Imm_val, w_Shift_val, w_Rotate, w_Shift_type,
+        w_Instr_CNZV[3], w_Op2_val, w_Carry);
 
     // ------ ALU ------
-    wire [`WordWidth-1:0]   out_Alu_res;
-    wire [3:0]              out_CNZV;
-    wire                    out_Writeback;
+    wire [3:0]              w_CNZV;
 
-    alu alu(in_Rn_val, out_Op2_val, out_Carry, out_Opcode, out_Instr_CNZV, out_Set_cond, out_Alu_res,
-        out_CNZV, out_Writeback);
-
-    initial begin
-        pc <= 0;
-        in_Size <= 2'b10;
-    end
+    alu alu(in_Rn_val, w_Op2_val, w_Carry, w_Opcode, w_Instr_CNZV, w_Set_cond, w_Alu_res,
+        w_CNZV, w_Writeback);
 
     always @(posedge clock) begin
-        in_Addr <= pc;
+        if (nreset) begin
+            pc <= 0;
+            ram_Size <= 2'b10;
+        end
+
+        ram_Addr <= pc;
     end
 
 endmodule

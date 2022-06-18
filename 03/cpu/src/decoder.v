@@ -39,22 +39,21 @@
 // (https://en.wikibooks.org/wiki/Microprocessor_Design/Instruction_Decoder)
 //
 // We're doing the second one.
-module decoder(in_Instruction, out_Instruction_type, out_Set_cond, out_Opcode, out_Rn, out_Rs, out_Rm,
-    out_Rd, out_Imm, out_Shift_val, out_Shift_type, out_Rotate, out_CNZV);
-
-    input wire [`InstructionWidth-1:0] in_Instruction;
-    output wire [3:0] out_Instruction_type;
-    output wire  out_Set_cond; // bit 20 -> 'S' (set condition codes) or 'L' (Load/store/link)
-    output wire [3:0] out_Opcode; // ALU opcode
-    output wire [3:0] out_Rn; // 1st operand (reg address)
-    output wire [3:0] out_Rs; // only used in mul and mla (reg address)
-    output wire [3:0] out_Rm; // 2nd operand (reg address)
-    output wire [3:0] out_Rd; // destination register
-    output wire [`WordWidth-1:0] out_Imm; // unsigned 8-bit immediate value
-    output wire [4:0] out_Shift_val; // shift to be applied to Rm
-    output wire [1:0] out_Shift_type; // shift type
-    output wire [3:0] out_Rotate; // shift to be applied to imm
-    output wire [3:0] out_CNZV; // condition flags
+module decoder(
+    input   wire [`InstructionWidth-1:0]    in_Instruction,
+    output  wire [3:0]                      out_Instruction_type,
+    output  wire                            out_Set_cond, // bit 20 -> 'S' or 'L' (Load/store/link)
+    output  wire [3:0]                      out_Opcode, // ALU opcode
+    output  wire [3:0]                      out_Rn, // 1st operand (reg address)
+    output  wire [3:0]                      out_Rs, // only used in mul and mla (reg address)
+    output  wire [3:0]                      out_Rm, // 2nd operand (reg address)
+    output  wire [3:0]                      out_Rd, // destination register
+    output  wire [`WordWidth-1:0]           out_Imm, // unsigned 8-bit immediate value
+    output  wire [4:0]                      out_Shift_val, // shift to be applied to Rm
+    output  wire [1:0]                      out_Shift_type, // shift type
+    output  wire [3:0]                      out_Rotate, // shift to be applied to imm
+    output  wire [3:0]                      out_CNZV // condition flags
+    );
 
     reg [3:0] r_Instruction_type;
     reg r_Set_cond;
@@ -77,7 +76,7 @@ module decoder(in_Instruction, out_Instruction_type, out_Set_cond, out_Opcode, o
     assign out_Rm = r_Rm;
     assign out_Rd = r_Rd;
     assign out_Imm = r_Imm;
-    assign out_Shift = r_Shift_val;
+    assign out_Shift_val = r_Shift_val;
     assign out_Shift_type = r_Shift_type;
     assign out_Rotate = r_Rotate;
     assign out_CNZV = r_CNZV;
