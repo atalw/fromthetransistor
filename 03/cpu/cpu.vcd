@@ -1,5 +1,5 @@
 $date
-	Thu Jun 16 18:39:25 2022
+	Sat Jun 18 13:55:48 2022
 $end
 $version
 	Icarus Verilog
@@ -9,12 +9,12 @@ $timescale
 $end
 $scope module control_unit_tb $end
 $var wire 32 ! out_Rn_val [31:0] $end
-$var reg 1 " clock $end
-$var reg 32 # in_Instruction [31:0] $end
+$var wire 14 " pc [13:0] $end
+$var reg 1 # clock $end
 $var reg 4 $ in_Rn [3:0] $end
 $scope module control_unit $end
-$var wire 1 " clock $end
-$var wire 32 % in_Instruction [31:0] $end
+$var wire 1 # clock $end
+$var wire 1 % in_Write_ram $end
 $var wire 5 & out_Shift_val [4:0] $end
 $var wire 1 ' out_Writeback $end
 $var wire 2 ( out_Shift_type [1:0] $end
@@ -27,188 +27,214 @@ $var wire 4 . out_Rd [3:0] $end
 $var wire 4 / out_Opcode [3:0] $end
 $var wire 32 0 out_Op2_val [31:0] $end
 $var wire 4 1 out_Instruction_type [3:0] $end
-$var wire 4 2 out_Instr_CNZV [3:0] $end
-$var wire 32 3 out_Imm_val [31:0] $end
-$var wire 1 4 out_Carry $end
-$var wire 4 5 out_CNZV [3:0] $end
-$var wire 32 6 out_Alu_res [31:0] $end
-$var wire 32 7 in_Rn_val [31:0] $end
-$var wire 32 8 in_Op2_val [31:0] $end
+$var wire 32 2 out_Instruction [31:0] $end
+$var wire 4 3 out_Instr_CNZV [3:0] $end
+$var wire 32 4 out_Imm_val [31:0] $end
+$var wire 1 5 out_Carry $end
+$var wire 4 6 out_CNZV [3:0] $end
+$var wire 32 7 out_Alu_res [31:0] $end
+$var wire 32 8 in_Rn_val [31:0] $end
+$var wire 32 9 in_Op2_val [31:0] $end
+$var reg 14 : in_Addr [13:0] $end
+$var reg 2 ; in_Size [1:0] $end
+$var reg 32 < in_Wdata [31:0] $end
+$var reg 14 = pc [13:0] $end
 $scope module alu $end
-$var wire 4 9 out_CNZV [3:0] $end
+$var wire 4 > out_CNZV [3:0] $end
 $var wire 1 ' out_Writeback $end
-$var wire 32 : out_Y [31:0] $end
+$var wire 32 ? out_Y [31:0] $end
 $var wire 1 ) in_Set_cond $end
-$var wire 32 ; in_Rn [31:0] $end
-$var wire 4 < in_Opcode [3:0] $end
-$var wire 32 = in_Op2 [31:0] $end
-$var wire 4 > in_CNZV [3:0] $end
-$var wire 1 4 in_Barrel_carry $end
-$var wire 32 ? ad_Y [31:0] $end
-$var wire 4 @ ad_CNZV [3:0] $end
-$var reg 1 A ad_Carry $end
-$var reg 32 B ad_Op2 [31:0] $end
-$var reg 32 C ad_Rn [31:0] $end
-$var reg 4 D r_CNZV [3:0] $end
-$var reg 1 E r_Writeback $end
-$var reg 32 F r_Y [31:0] $end
+$var wire 32 @ in_Rn [31:0] $end
+$var wire 4 A in_Opcode [3:0] $end
+$var wire 32 B in_Op2 [31:0] $end
+$var wire 4 C in_CNZV [3:0] $end
+$var wire 1 5 in_Barrel_carry $end
+$var wire 32 D ad_Y [31:0] $end
+$var wire 4 E ad_CNZV [3:0] $end
+$var reg 1 F ad_Carry $end
+$var reg 32 G ad_Op2 [31:0] $end
+$var reg 32 H ad_Rn [31:0] $end
+$var reg 4 I r_CNZV [3:0] $end
+$var reg 1 J r_Writeback $end
+$var reg 32 K r_Y [31:0] $end
 $scope module adder $end
-$var wire 1 A in_Carry $end
-$var wire 32 G in_Op2 [31:0] $end
-$var wire 32 H in_Rn [31:0] $end
-$var wire 4 I out_CNZV [3:0] $end
-$var wire 32 J out_Y [31:0] $end
-$var reg 4 K r_CNZV [3:0] $end
-$var reg 32 L r_Y [31:0] $end
-$var integer 32 M idx [31:0] $end
+$var wire 1 F in_Carry $end
+$var wire 32 L in_Op2 [31:0] $end
+$var wire 32 M in_Rn [31:0] $end
+$var wire 4 N out_CNZV [3:0] $end
+$var wire 32 O out_Y [31:0] $end
+$var reg 4 P r_CNZV [3:0] $end
+$var reg 32 Q r_Y [31:0] $end
+$var integer 32 R idx [31:0] $end
 $scope function one_bit_add $end
-$var reg 1 N a $end
-$var reg 1 O b $end
-$var reg 1 P carry $end
+$var reg 1 S a $end
+$var reg 1 T b $end
+$var reg 1 U carry $end
 $upscope $end
 $upscope $end
 $upscope $end
 $scope module decoder $end
-$var wire 32 Q in_Instruction [31:0] $end
-$var wire 4 R out_Instruction_type [3:0] $end
-$var wire 4 S out_Opcode [3:0] $end
-$var wire 4 T out_Rd [3:0] $end
-$var wire 4 U out_Rm [3:0] $end
-$var wire 4 V out_Rn [3:0] $end
-$var wire 4 W out_Rotate [3:0] $end
-$var wire 4 X out_Rs [3:0] $end
+$var wire 4 V out_Instruction_type [3:0] $end
+$var wire 4 W out_Opcode [3:0] $end
+$var wire 4 X out_Rd [3:0] $end
+$var wire 4 Y out_Rm [3:0] $end
+$var wire 4 Z out_Rn [3:0] $end
+$var wire 4 [ out_Rotate [3:0] $end
+$var wire 4 \ out_Rs [3:0] $end
 $var wire 1 ) out_Set_cond $end
-$var wire 2 Y out_Shift_type [1:0] $end
-$var wire 5 Z out_Shift_val [4:0] $end
-$var wire 1 [ out_Shift $end
-$var wire 32 \ out_Imm [31:0] $end
-$var wire 4 ] out_CNZV [3:0] $end
-$var reg 4 ^ r_CNZV [3:0] $end
-$var reg 8 _ r_Imm [7:0] $end
-$var reg 4 ` r_Instruction_type [3:0] $end
-$var reg 4 a r_Opcode [3:0] $end
-$var reg 4 b r_Rd [3:0] $end
-$var reg 4 c r_Rm [3:0] $end
-$var reg 4 d r_Rn [3:0] $end
-$var reg 4 e r_Rotate [3:0] $end
-$var reg 4 f r_Rs [3:0] $end
-$var reg 1 g r_Set_cond $end
-$var reg 2 h r_Shift_type [1:0] $end
-$var reg 8 i r_Shift_val [7:0] $end
+$var wire 2 ] out_Shift_type [1:0] $end
+$var wire 5 ^ out_Shift_val [4:0] $end
+$var wire 1 _ out_Shift $end
+$var wire 32 ` out_Imm [31:0] $end
+$var wire 4 a out_CNZV [3:0] $end
+$var wire 32 b in_Instruction [31:0] $end
+$var reg 4 c r_CNZV [3:0] $end
+$var reg 8 d r_Imm [7:0] $end
+$var reg 4 e r_Instruction_type [3:0] $end
+$var reg 4 f r_Opcode [3:0] $end
+$var reg 4 g r_Rd [3:0] $end
+$var reg 4 h r_Rm [3:0] $end
+$var reg 4 i r_Rn [3:0] $end
+$var reg 4 j r_Rotate [3:0] $end
+$var reg 4 k r_Rs [3:0] $end
+$var reg 1 l r_Set_cond $end
+$var reg 2 m r_Shift_type [1:0] $end
+$var reg 8 n r_Shift_val [7:0] $end
 $scope function classify_instr $end
-$var reg 1 j instruction $end
+$var reg 1 o instruction $end
 $upscope $end
 $scope task extract_data $end
-$var reg 1 k instruction_type $end
+$var reg 1 p instruction_type $end
 $upscope $end
+$upscope $end
+$scope module ram $end
+$var wire 1 # clock $end
+$var wire 14 q in_Addr [13:0] $end
+$var wire 2 r in_Size [1:0] $end
+$var wire 32 s in_Wdata [31:0] $end
+$var wire 1 % in_Write $end
+$var reg 32 t out_Rdata [31:0] $end
+$var reg 32 u r_Rdata [31:0] $end
 $upscope $end
 $scope module register_bank $end
-$var wire 1 " clock $end
-$var wire 4 l in_Read_address1 [3:0] $end
-$var wire 4 m in_Read_address2 [3:0] $end
-$var wire 4 n in_Write_address1 [3:0] $end
-$var wire 32 o in_Write_data1 [31:0] $end
+$var wire 1 # clock $end
+$var wire 4 v in_Read_address1 [3:0] $end
+$var wire 4 w in_Read_address2 [3:0] $end
+$var wire 4 x in_Write_address1 [3:0] $end
+$var wire 32 y in_Write_data1 [31:0] $end
 $var wire 1 ' in_Write_enable $end
-$var reg 32 p out_Data1 [31:0] $end
-$var reg 32 q out_Data2 [31:0] $end
+$var reg 32 z out_Data1 [31:0] $end
+$var reg 32 { out_Data2 [31:0] $end
 $upscope $end
 $scope module shifter $end
-$var wire 1 r in_C_flag $end
-$var wire 32 s in_Imm_val [31:0] $end
-$var wire 32 t in_Reg_val [31:0] $end
-$var wire 4 u in_Rotate [3:0] $end
-$var wire 2 v in_Shift_type [1:0] $end
-$var wire 5 w in_Shift_val [4:0] $end
-$var wire 1 4 out_Carry $end
-$var wire 32 x out_Op2 [31:0] $end
-$var reg 1 y r_Carry $end
-$var reg 32 z r_Op2 [31:0] $end
+$var wire 1 | in_C_flag $end
+$var wire 32 } in_Imm_val [31:0] $end
+$var wire 32 ~ in_Reg_val [31:0] $end
+$var wire 4 !" in_Rotate [3:0] $end
+$var wire 2 "" in_Shift_type [1:0] $end
+$var wire 5 #" in_Shift_val [4:0] $end
+$var wire 1 5 out_Carry $end
+$var wire 32 $" out_Op2 [31:0] $end
+$var reg 1 %" r_Carry $end
+$var reg 32 &" r_Op2 [31:0] $end
 $scope task exec_shift $end
-$var reg 5 { is_reg [4:0] $end
-$var reg 5 | shift_val [4:0] $end
-$var reg 32 } val [31:0] $end
+$var reg 5 '" is_reg [4:0] $end
+$var reg 5 (" shift_val [4:0] $end
+$var reg 32 )" val [31:0] $end
 $upscope $end
 $upscope $end
+$upscope $end
+$scope begin $unm_blk_87 $end
 $upscope $end
 $upscope $end
 $enddefinitions $end
 #0
 $dumpvars
-bx }
-bx |
+bx )"
+bx ("
+bx '"
+bx &"
+x%"
+bx $"
+bz #"
+bx ""
+bx !"
+bx ~
+b0xxxxxxxx }
+x|
 bx {
 bx z
-xy
+bx y
 bx x
-bz w
+bx w
 bx v
 bx u
 bx t
-b0xxxxxxxx s
-xr
+bx s
+b10 r
 bx q
-bx p
-bx o
+xp
+xo
 bx n
 bx m
-bx l
-xk
-xj
+xl
+bx k
+bx j
 bx i
 bx h
-xg
+bx g
 bx f
 bx e
 bx d
 bx c
 bx b
 bx a
-bx `
-bx _
-bx ^
+b0xxxxxxxx `
+x_
+bz ^
 bx ]
-b0xxxxxxxx \
-x[
-bz Z
+bx \
+bx [
+bx Z
 bx Y
 bx X
 bx W
 bx V
-bx U
-bx T
-bx S
-bx R
+xU
+xT
+xS
+b0 R
 bx Q
-xP
-xO
-xN
-b0 M
+bx P
+bx O
+bx N
+bx M
 bx L
 bx K
-bx J
+xJ
 bx I
 bx H
 bx G
-bx F
-xE
+xF
+bx E
 bx D
 bx C
 bx B
-xA
+bx A
 bx @
 bx ?
 bx >
-bx =
+b0 =
 bx <
-bx ;
+b10 ;
 bx :
 bx 9
 bx 8
 bx 7
 bx 6
-bx 5
-x4
-b0xxxxxxxx 3
+x5
+b0xxxxxxxx 4
+bx 3
 bx 2
 bx 1
 bx 0
@@ -222,125 +248,108 @@ x)
 bx (
 x'
 bz &
-bx %
+z%
 bx $
-bx #
-0"
+0#
+b0 "
 bz !
 $end
 #10
-1"
+b0 :
+b0 q
+1#
 #20
-0"
+0#
 #30
-1"
-#40
-0"
-#50
-1"
-#60
-0"
-#70
-1"
-#80
-0"
-#90
-1"
-#100
-b100000 M
-b100 ?
-b100 J
-b100 L
-0N
-0O
-0P
-b0 @
-b0 I
-b0 K
-04
-0y
+b100000 R
+b100 D
+b100 O
+b100 Q
+0S
+0T
+0U
+b0 E
+b0 N
+b0 P
+05
+0%"
 b100 0
-b100 =
-b100 x
-b100 z
-b0 {
-b0 |
-b100 }
-b0 7
-b0 ;
-b0 p
-0r
-1'
-1E
-b0 5
-b0 9
-b0 D
-b100 6
-b100 :
-b100 o
-b100 F
-0A
 b100 B
-b100 G
-b0 C
-b0 H
-b11 (
-b11 Y
-b11 v
-b11 h
-b0 +
-b0 W
-b0 u
-b0 e
-b100 3
-b100 \
-b100 s
-b100 _
-b0 .
-b0 T
-b0 n
-b0 b
-b0 ,
-b0 V
-b0 l
-b0 d
-b100 /
-b100 <
-b100 S
-b100 a
-0)
-0g
-b0 2
+b100 $"
+b100 &"
+b0 '"
+b0 ("
+b100 )"
+b0 8
+b0 @
+b0 z
+0|
+1'
+1J
+b0 6
 b0 >
-b0 ]
-b0 ^
-1k
+b0 I
+b100 7
+b100 ?
+b100 y
+b100 K
+0F
+b100 G
+b100 L
+b0 H
+b0 M
+b11 (
+b11 ]
+b11 ""
+b11 m
+b0 +
+b0 [
+b0 !"
+b0 j
+b100 4
+b100 `
+b100 }
+b100 d
+b0 .
+b0 X
+b0 x
+b0 g
+b0 ,
+b0 Z
+b0 v
+b0 i
+b100 /
+b100 A
+b100 W
+b100 f
+0)
+0l
+b0 3
+b0 C
+b0 a
+b0 c
+1p
 b1 1
-b1 R
-b1 `
-0j
-0"
-b10100000000000000000000100 #
-b10100000000000000000000100 %
-b10100000000000000000000100 Q
-#110
-1"
-#120
-0"
-#130
-1"
-#140
-0"
-#150
-1"
-#160
-0"
-#170
-1"
-#180
-0"
-#190
-1"
-#200
-0"
+b1 V
+b1 e
+0o
+b10100000000000000000000100 2
+b10100000000000000000000100 b
+b10100000000000000000000100 t
+b10100000000000000000000100 u
+1#
+#40
+0#
+#50
+1#
+#60
+0#
+#70
+1#
+#80
+0#
+#90
+1#
+#100
+0#
 b0 $
