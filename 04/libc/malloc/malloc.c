@@ -16,9 +16,8 @@
 #include <sys/mman.h>
 #include <assert.h>
 #include <string.h>
-/* #ifdef PRINT_DEBUG */
 #include <stdio.h>
-/* #endif */
+#include <stdlib.h>
 #include "malloc.h"
 
 
@@ -76,6 +75,19 @@ void *my_malloc(size_t size) {
 
         /* If we found a block which is free and >= size, update it's status to in use and return */
         if (current != NULL) {
+            /* If after splitting, the size of the second partition is greater than the header size */
+            /* plus a buffer of N, only then we'll split, otherwise return the complete block */
+            if (current->size - size > HEADER_SIZE + 100) {
+                struct block_header *new = current + size/HEADER_SIZE;
+                new->free = 1;
+                new->size = ((current->size > size) ? (current->size - size) : (size - current->size));
+                new->next = current->next;
+                current->free = 0;
+                current->size = size;
+                current->next = new;
+                return current;
+            }
+
             current->free = 0;
             return current;
         }
