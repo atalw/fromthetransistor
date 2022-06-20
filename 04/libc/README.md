@@ -15,6 +15,7 @@
     - [Dynamic](https://en.wikipedia.org/w/index.php?title=Dynamic_memory_allocation&redirect=no): `malloc` dynamically allocates space in the heap
 - [RAII](https://en.wikipedia.org/wiki/Resource_acquisition_is_initialization)
 - [C dynamic memory allocation](https://en.wikipedia.org/wiki/C_dynamic_memory_allocation): description of `malloc` and `calloc`
+- [Malloc theory lecture notes](https://d1b10bmlvqabco.cloudfront.net/attach/jcjf1dhd7ns6vw/idud25vuobb263/jgscrxlbtfkg/introtomalloc.pdf)
 
 #### Additional reads
 - [Return-to-libc attack](https://en.wikipedia.org/wiki/Return-to-libc_attack)
