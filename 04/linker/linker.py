@@ -1,3 +1,4 @@
+from enum import Enum, auto
 
 # Structure:
 # ----
@@ -13,6 +14,9 @@
 # Section header table -> linking (connecting program objects) information
 # ----
 
+
+ei_class = None
+ei_data = None
 
 def append_hex(s, h):
     b = bytearray(h)
@@ -135,191 +139,339 @@ def file_header(ei_class, ei_data, ei_version, ei_osabi, e_type, e_machine, e_en
 
     return data
 
-# The program header table tells the system how to create a process image. It is found at file offset 
-# e_phoff, and consists of e_phnum entries, each with size e_phentsize. The layout is slightly 
-# different in 32-bit ELF vs 64-bit ELF, because the p_flags are in a different structure location 
+# Program header: https://docs.oracle.com/cd/E19683-01/816-1386/chapter6-83432/index.html
+
+# Identifies the type of the segment.
+class PType(Enum):
+    PT_NULL = 0
+    PT_LOAD = 1
+    PT_DYNAMIC = 2
+    PT_INTERP = 3
+    PT_NOTE = 4
+    PT_SHLIB = 5
+    PT_PHDR = 6
+    PT_TLS = 7
+    PT_LOOS = 0x60000000
+    PT_HIOS = 0x6FFFFFFF
+    PT_LOPROC = 0x70000000
+    PT_HIPROC = 0x7FFFFFFF
+
+# A program to be loaded by the system must have at least one loadable segment, although this is not
+# required by the file format. When the system creates loadable segment memory images, it gives access
+# permissions, as specified in the p_flags member. All bits included in the PF_MASKPROC mask are
+# reserved for processor-specific semantics.
+class PFlags(Enum):
+    PF_X = 1 # execute
+    PF_W = 2 # write
+    PF_WX = 3 # write + exec
+    PF_R = 4 # read
+    PF_RX = 5 # read + exec
+    PF_RW = 6 # read + write
+    PF_RWX = 7 # read + write + exec
+    PF_MASKPROC = 0xf0000000
+
+# The program header table tells the system how to create a process image. It is found at file offset
+# e_phoff, and consists of e_phnum entries, each with size e_phentsize. The layout is slightly
+# different in 32-bit ELF vs 64-bit ELF, because the p_flags are in a different structure location
 # for alignment reasons. Each entry is structured as:
-def program_header(ei_class, p_type):
-    data = bytearray()
+class ProgramHeaderTable:
+    headers = []
 
-    assert(len(p_type) == 4)
-    data += p_type
+    def __init__(self):
+        header = self.new_header(PType.PT_LOAD, PFlags.PF_RX)
+        self.headers.append(header)
 
-    # Segment-dependent flags (position for 64-bit structure).
-    if ei_class == 1:
-        p_flags = bytes([0, 0, 0, 0])
-        data += p_flags
+    def new_header(self, p_type, p_flags):
+        data = bytearray()
 
-    # Offset of the segment in the file image.
-    p_offset = None
-    if ei_class == 0:
-        p_offset = bytes([0, 0, 0, 0])
-    else:
-        p_offset = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-    data += p_offset
+        ptype = gb(p_type.value, 4)
+        print("no", ptype)
+        data += ptype
 
-    # Virtual address of the segment in memory.
-    p_vaddr = None
-    if ei_class == 0:
-        p_vaddr = bytes([0, 0, 0, 0])
-    else:
-        p_vaddr = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-    data += p_vaddr
+        # Segment-dependent flags (position for 64-bit structure).
+        if ei_class == 2:
+            p_flags = gb(p_flags.value, 4)
+            data += p_flags
 
-    # On systems where physical address is relevant, reserved for segment's physical address.
-    p_paddr = None
-    if ei_class == 0:
-        p_paddr = bytes([0, 0, 0, 0])
-    else:
-        p_paddr = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-    data += p_paddr
+        print(ei_class, len(data), 0x38)
+        # Offset of the segment in the file image.
+        p_offset = None
+        if ei_class == 1:
+            p_offset = bytes([0, 0, 0, 0])
+        else:
+            p_offset = bytes([0, 0, 0, 0, 0, 0, 0, 0])
 
-    # Size in bytes of the segment in the file image. May be 0.
-    p_filesz = None
-    if ei_class == 0:
-        p_filesz = bytes([0, 0, 0, 0])
-    else:
-        p_filesz = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-    data += p_filesz
+        data += p_offset
 
-    # Size in bytes of the segment in memory. May be 0.
-    p_memsz = None
-    if ei_class == 0:
-        p_memsz = bytes([0, 0, 0, 0])
-    else:
-        p_memsz = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-    data += p_memsz
+        # Virtual address of the segment in memory.
+        p_vaddr = None
+        if ei_class == 1:
+            p_vaddr = bytes([0, 0, 0, 0])
+        else:
+            p_vaddr = bytes([0, 0, 0, 0, 0, 0, 0, 0])
 
-    # Segment-dependent flags (position for 32-bit structure).
-    if ei_class == 0:
-        p_flags = bytes([0, 0, 0, 0])
-        data += p_flags
+        data += p_vaddr
 
-    # 0 and 1 specify no alignment. Otherwise should be a positive, integral power of 2, with 
-    # p_vaddr equating p_offset modulus p_align.
-    p_align = None
-    if ei_class == 0:
-        p_align = bytes([0, 0, 0, 0])
-    else:
-        p_align = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-    data += p_align
+        # On systems where physical address is relevant, reserved for segment's physical address.
+        p_paddr = None
+        if ei_class == 1:
+            p_paddr = bytes([0, 0, 0, 0])
+        else:
+            p_paddr = bytes([0, 0, 0, 0, 0, 0, 0, 0])
 
-    if ei_class == 0:
-        assert(len(data) == 0x20)
-    else:
-        assert(len(data) == 0x38)
+        data += p_paddr
 
-    return data
+        # Size in bytes of the segment in the file image. May be 0.
+        p_filesz = None
+        if ei_class == 1:
+            p_filesz = bytes([0, 0, 0, 0])
+        else:
+            p_filesz = bytes([0, 0, 0, 0, 0, 0, 0, 0])
 
-def section_header(ei_class):
-    data = bytearray()
+        data += p_filesz
 
-    # An offset to a string in the .shstrtab section that represents the name of this section.
-    sh_name = bytes([0, 0, 0, 0])
-    data += sh_name
+        # Size in bytes of the segment in memory. May be 0.
+        p_memsz = None
+        if ei_class == 1:
+            p_memsz = bytes([0, 0, 0, 0])
+        else:
+            p_memsz = bytes([0, 0, 0, 0, 0, 0, 0, 0])
 
-    # Identifies the type of this header.
-    sh_type = bytes([0, 0, 0, 0])
-    data += sh_name
+        data += p_memsz
 
-    # Identifies the attributes of the section.
-    sh_flags = None
-    if ei_class == 0:
-        sh_flags = bytes([0, 0, 0, 0])
-    else:
-        sh_flags = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-    data += sh_flags
+        # Segment-dependent flags (position for 32-bit structure).
+        if ei_class == 1:
+            p_flags = gb(p_flags, 4)
+            data += p_flags
 
-    # Virtual address of the section in memory, for sections that are loaded.
-    sh_addr = None
-    if ei_class == 0:
-        sh_addr = bytes([0, 0, 0, 0])
-    else:
-        sh_addr = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-    data += sh_addr
+        # 0 and 1 specify no alignment. Otherwise should be a positive, integral power of 2, with 
+        # p_vaddr equating p_offset modulus p_align.
+        p_align = None
+        if ei_class == 1:
+            p_align = bytes([0, 0, 0, 0])
+        else:
+            p_align = bytes([0, 0, 0, 0, 0, 0, 0, 0])
 
-    # Offset of the section in the file image.
-    sh_offset = None
-    if ei_class == 0:
-        sh_offset = bytes([0, 0, 0, 0])
-    else:
-        sh_offset = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-    data += sh_offset
+        data += p_align
 
-    # Size in bytes of the section in the file image. May be 0.
-    sh_size = None
-    if ei_class == 0:
-        sh_size = bytes([0, 0, 0, 0])
-    else:
-        sh_size = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-    data += sh_size
+        print(len(data), 0x38)
 
-    # Contains the section index of an associated section. This field is used for several purposes,
-    # depending on the type of section.
-    sh_link = bytes([0, 0, 0, 0])
-    data += sh_link
+        if ei_class == 0:
+            assert(len(data) == 0x20)
+        else:
+            assert(len(data) == 0x38)
 
-    # Contains extra information about the section. This field is used for several purposes, 
-    # depending on the type of section.
-    sh_info = bytes([0, 0, 0, 0])
-    data += sh_info
+        return data
 
-    # Contains the required alignment of the section. This field must be a power of two.
-    sh_addralign = None
-    if ei_class == 0:
-        sh_addralign = bytes([0, 0, 0, 0])
-    else:
-        sh_addralign = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-    data += sh_addralign
 
-    # Contains the size, in bytes, of each entry, for sections that contain fixed-size entries. 
-    # Otherwise, this field contains zero.
-    sh_entsize = None
-    if ei_class == 0:
-        sh_entsize = bytes([0, 0, 0, 0])
-    else:
-        sh_entsize = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-    data += sh_entsize
+class SectionType(Enum):
+    TEXT = auto()
+    RODATA = auto()
+    DATA = auto()
+    BSS = auto()
+    SYMTAB = auto()
+    STRTAB = auto()
+    SHSTRTAB = auto()
 
-    if ei_class == 0:
-        assert(len(data) == 0x28)
-    else:
-        assert(len(data) == 0x40)
+class SHType(Enum):
+    SHT_NULL = 0
+    SHT_PROGBITS = 1
+    SHT_SYMTAB = 2
+    SHT_STRTAB = 3
+    SHT_RELA = 4
+    SHT_HASH = 5
+    SHT_DYNAMIC = 6
+    SHT_NOTE = 7
+    SHT_NOBITS = 8
+    SHT_REL = 9
 
-    return data
+class Section:
+    def __init__(self, stype, data):
+        match stype:
+            case SectionType.TEXT:
+                sh_type = SHT_PROGBITS
+                (self.section_data(sh_type, data), self.section_header(sh_type))
+            case SectionType.RODATA:
+                sh_type = SHT_PROGBITS
+                pass
+            case SectionType.DATA:
+                sh_type = SHT_PROGBITS
+                pass
+            case SectionType.BSS:
+                sh_type = SHT_NOBITS
+                pass
+            case SectionType.SYMTAB:
+                sh_type = SHT_SYMTAB
+                pass
+            case SectionType.STRTAB:
+                sh_type = SHT_STRTAB
+                pass
+            case SectionType.SHSTRTAB:
+                sh_type = SHT_STRTAB
+                pass
 
-def export(data):
+    def section_data(self, sh_type, data):
+
+        pass
+
+    def section_header(self, sh_type):
+        data = bytearray()
+
+        # An offset to a string in the .shstrtab section that represents the name of this section.
+        sh_name = bytes([0, 0, 0, 0])
+        data += sh_name
+
+        # Identifies the type of this header.
+        assert(len(sh_type) == 4)
+        data += sh_name
+
+        # Identifies the attributes of the section.
+        sh_flags = None
+        if ei_class == 0:
+            sh_flags = bytes([0, 0, 0, 0])
+        else:
+            sh_flags = bytes([0, 0, 0, 0, 0, 0, 0, 0])
+        data += sh_flags
+
+        # Virtual address of the section in memory, for sections that are loaded.
+        sh_addr = None
+        if ei_class == 0:
+            sh_addr = bytes([0, 0, 0, 0])
+        else:
+            sh_addr = bytes([0, 0, 0, 0, 0, 0, 0, 0])
+        data += sh_addr
+
+        # Offset of the section in the file image.
+        sh_offset = None
+        if ei_class == 0:
+            sh_offset = bytes([0, 0, 0, 0])
+        else:
+            sh_offset = bytes([0, 0, 0, 0, 0, 0, 0, 0])
+        data += sh_offset
+
+        # Size in bytes of the section in the file image. May be 0.
+        sh_size = None
+        if ei_class == 0:
+            sh_size = bytes([0, 0, 0, 0])
+        else:
+            sh_size = bytes([0, 0, 0, 0, 0, 0, 0, 0])
+        data += sh_size
+
+        # Contains the section index of an associated section. This field is used for several purposes,
+        # depending on the type of section.
+        sh_link = bytes([0, 0, 0, 0])
+        data += sh_link
+
+        # Contains extra information about the section. This field is used for several purposes, 
+        # depending on the type of section.
+        sh_info = bytes([0, 0, 0, 0])
+        data += sh_info
+
+        # Contains the required alignment of the section. This field must be a power of two.
+        sh_addralign = None
+        if ei_class == 0:
+            sh_addralign = bytes([0, 0, 0, 0])
+        else:
+            sh_addralign = bytes([0, 0, 0, 0, 0, 0, 0, 0])
+        data += sh_addralign
+
+        # Contains the size, in bytes, of each entry, for sections that contain fixed-size entries. 
+        # Otherwise, this field contains zero.
+        sh_entsize = None
+        if ei_class == 0:
+            sh_entsize = bytes([0, 0, 0, 0])
+        else:
+            sh_entsize = bytes([0, 0, 0, 0, 0, 0, 0, 0])
+        data += sh_entsize
+
+        if ei_class == 0:
+            assert(len(data) == 0x28)
+        else:
+            assert(len(data) == 0x40)
+
+        return data
+
+def sections():
+    # .text: Opcodes (binary assembly) that can be executed
+    # .rodata: Read Only data like string constants
+    # .data: Initialized global variables, space for values
+    # .bss: Un-initialized global variables, no space for values
+    # .symtab: Table of publicly available symbols for funcs/vars
+    # .strtab: Null-terminated strings, often names of things in .symtab
+    # .shstrab: Null-terminated strings, often names section headers
+    # # .debug: Debug info from gcc -g in DWARF format
+    # # .rel.text: Relocation information for .text section
+    # # .rel.data: Relocation information for .data section
+
+
+    pass
+
+def import_obj(filename):
+    f = open(filename, "rb")
+    while True:
+        content = f.read(-1)
+        if not content:
+            break
+        return content
+    return None
+
+def export_exec(data):
     f = open("elf.bin", "wb")
     f.write(data)
 
 
+# generate bytes given bytearray and size
+def gb(b, size):
+    ba = b
+    if type(b) == int:
+        ba = bytearray([b])
+
+    assert(len(ba) <= size)
+    ret = bytearray(size - len(ba)) + ba
+    if ei_data == 1: # little endian
+        return ret[::-1]
+    else:
+        return ret
+
 def main():
-    ei_class = 1 # bit format
-    ei_data = 1 # endiannes
-    ei_version = 1
-    ei_osabi = 0x03 # aarch
-    e_type = bytes([0, 0x02]) # file type
-    e_machine = bytes([0, 0xb7]) # isa type
-    e_entry = ei_class == 0 ? bytes([0, 0, 0, 0]) : bytes([0, 0, 0, 0, 0, 0, 0, 0]) # mem addr of entry point
-    e_phoff = ei_class == 0 ? bytes([0, 0, 0, 0x34]) : bytes([0, 0, 0, 0, 0, 0, 0x40]) # program header table start
-    e_shoff = ei_class == 0 ? bytes([0, 0, 0, 0x34+0x20]) : bytes([0, 0, 0, 0, 0, 0, 0x40+0x38]) # section header table start
-    e_phentsize = ei_class == 0 ? bytes([0, 0x20]) : bytes([0, 0x38]) # program header size
-    e_phnum = 
-    e_shentsize = ei_class == 0 ? bytes([0, 0x28]) : bytes([0, 0x40]) # program header size
-    e_shnum = len(
-    e_shstrndx = 
+    global ei_class, ei_data
+    obj = import_obj("linux-main.o")
 
-    ei_class = 1
-    data = file_header(32, 0, ei_class, 0, bytes([0, 0x02]), 0x03, bytes([0, 0, 0, 0]), bytes([0, 0, 0, 0]), bytes([0, 0, 0, 0]), bytes([0, 0]), bytes([0, 0]), bytes([0, 0]), bytes([0, 0]), bytes([0, 0]))
-    print(data)
+    #  ei_class = gb(obj[4], 1) # bit format
+    ei_class = obj[4]
+    #  ei_data = gb(obj[5], 1) # endianness
+    ei_data = obj[5]
+    ei_version = gb(obj[6], 1)
+    ei_osabi = gb(obj[7], 1) # Unix - System V
+    e_type = gb(0x03, 2) # shared object file
+    e_machine = gb(obj[0x12:0x14], 2) # isa type: aarch64
+    e_entry = gb(0, 4) if ei_class == 1 else gb(0, 8) # mem addr of entry point
+    e_phoff = gb(0x34, 4) if ei_class == 1 else gb(0x40, 8) # program header table start
+    e_phentsize = gb(0x20, 2) if ei_class == 1 else gb(0x38, 2) # program header size
+    e_shentsize = gb(0x28, 2) if ei_class == 1 else gb(0x40, 2) # section header size
 
-    data += program_header(ei_class, bytes([0, 0, 0, 0]))
-    print(data)
+    print(ei_class, e_entry)
 
-    data += section_header(ei_class)
-    print(data)
+    #  (program_header, e_phnum) = program_header(ei_class, bytes([0, 0, 0, 0]))
+    pht = ProgramHeaderTable()
+    e_phnum = len(pht.headers)
+    exit()
 
-    export(data)
+    sections = sections()
+    (section_header, e_shnum, e_shstrndx) = section_header(ei_class)
+
+    e_shoff = e_phoff + e_phentsize + len(sections)
+    #  e_phnum = 9 # TODO?
+    #  e_shnum = 29 # TODO?
+    #  e_shstrndx = 28 # TODO?
+
+    file_header = file_header(ei_class, ei_data, ei_version, ei_osabi, e_type, e_machine, e_entry, e_phoff,
+            e_shoff, e_phentsize, e_phnum, e_shentsize, e_shnum, e_shstrndx)
+
+
+    data = file_header + program_header + sections + section_header
+
+    export_exec(data)
     print("done writing")
 
 if __name__ == "__main__":
