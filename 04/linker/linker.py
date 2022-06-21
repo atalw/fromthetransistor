@@ -112,25 +112,20 @@ def file_header(ei_class, ei_data, ei_version, ei_osabi, e_type, e_machine, e_en
     data += bytes([0, e_ehsize])
 
     # Contains the size of a program header table entry.
-    assert(len(e_phentsize) == 2)
-    data += e_phentsize
+    data += gb(e_phentsize, 2)
 
     # Contains the number of entries in the program header table.
-    assert(len(e_phnum) == 2)
-    data += e_phnum
+    data += gb(e_phnum, 2)
 
     # Contains the size of a section header table entry.
-    assert(len(e_shentsize) == 2)
-    data += e_shentsize
+    data += gb(e_shentsize, 2)
 
     # Contains the number of entries in the section header table.
-    assert(len(e_shnum) == 2)
-    data += e_shnum
+    data += gb(e_shnum, 2)
 
     # Contains index of the section header table entry that contains the section names.
     assert(len(e_shstrndx) == 2)
     data += e_shstrndx
-
 
     if ei_data == 0:
         assert(len(data) == 52)
@@ -138,6 +133,19 @@ def file_header(ei_class, ei_data, ei_version, ei_osabi, e_type, e_machine, e_en
         assert(len(data) == 64)
 
     return data
+
+class Segment:
+    section_data = []
+    section_headers = []
+
+    def __init__(self):
+        pass
+
+    def new_section(self, stype, data):
+        section = Section(stype, data)
+        self.section_data.append(section.data)
+        self.section_headers.append(section.header)
+
 
 # Program header: https://docs.oracle.com/cd/E19683-01/816-1386/chapter6-83432/index.html
 
@@ -177,15 +185,16 @@ class PFlags(Enum):
 class ProgramHeaderTable:
     headers = []
 
-    def __init__(self):
-        header = self.new_header(PType.PT_LOAD, PFlags.PF_RX)
-        self.headers.append(header)
+    def __init__(self, segments, offset):
+        for seg in segments:
+            header = self.new_header(PType.PT_LOAD, PFlags.PF_RX, offset)
+            self.headers.append(header)
+            offset += sum([len(x) for x in seg.section_data])
 
-    def new_header(self, p_type, p_flags):
+    def new_header(self, p_type, p_flags, offset):
         data = bytearray()
 
         ptype = gb(p_type.value, 4)
-        print("no", ptype)
         data += ptype
 
         # Segment-dependent flags (position for 64-bit structure).
@@ -193,13 +202,11 @@ class ProgramHeaderTable:
             p_flags = gb(p_flags.value, 4)
             data += p_flags
 
-        print(ei_class, len(data), 0x38)
         # Offset of the segment in the file image.
-        p_offset = None
         if ei_class == 1:
-            p_offset = bytes([0, 0, 0, 0])
+            p_offset = gb(offset, 4)
         else:
-            p_offset = bytes([0, 0, 0, 0, 0, 0, 0, 0])
+            p_offset = gb(offset, 8)
 
         data += p_offset
 
@@ -254,9 +261,7 @@ class ProgramHeaderTable:
 
         data += p_align
 
-        print(len(data), 0x38)
-
-        if ei_class == 0:
+        if ei_class == 1:
             assert(len(data) == 0x20)
         else:
             assert(len(data) == 0x38)
@@ -264,7 +269,7 @@ class ProgramHeaderTable:
         return data
 
 
-class SectionType(Enum):
+class SType(Enum):
     TEXT = auto()
     RODATA = auto()
     DATA = auto()
@@ -286,33 +291,36 @@ class SHType(Enum):
     SHT_REL = 9
 
 class Section:
+    data = None
+    header = None
+
     def __init__(self, stype, data):
         match stype:
-            case SectionType.TEXT:
-                sh_type = SHT_PROGBITS
-                (self.section_data(sh_type, data), self.section_header(sh_type))
-            case SectionType.RODATA:
-                sh_type = SHT_PROGBITS
+            case SType.TEXT:
+                sh_type = SHType.SHT_PROGBITS
+                self.data = self.section_data(sh_type.value, data)
+                self.header = self.section_header(sh_type.value)
+            case SType.RODATA:
+                sh_type = SHType.SHT_PROGBITS
                 pass
-            case SectionType.DATA:
-                sh_type = SHT_PROGBITS
+            case SType.DATA:
+                sh_type = SHType.SHT_PROGBITS
                 pass
-            case SectionType.BSS:
-                sh_type = SHT_NOBITS
+            case SType.BSS:
+                sh_type = SHType.SHT_NOBITS
                 pass
-            case SectionType.SYMTAB:
-                sh_type = SHT_SYMTAB
+            case SType.SYMTAB:
+                sh_type = SHType.SHT_SYMTAB
                 pass
-            case SectionType.STRTAB:
-                sh_type = SHT_STRTAB
+            case SType.STRTAB:
+                sh_type = SHType.SHT_STRTAB
                 pass
-            case SectionType.SHSTRTAB:
-                sh_type = SHT_STRTAB
+            case SType.SHSTRTAB:
+                sh_type = SHType.SHT_STRTAB
                 pass
 
     def section_data(self, sh_type, data):
-
-        pass
+        return "hello"
 
     def section_header(self, sh_type):
         data = bytearray()
@@ -322,7 +330,7 @@ class Section:
         data += sh_name
 
         # Identifies the type of this header.
-        assert(len(sh_type) == 4)
+        sh_type = gb(sh_type, 4)
         data += sh_name
 
         # Identifies the attributes of the section.
@@ -437,33 +445,46 @@ def main():
     global ei_class, ei_data
     obj = import_obj("linux-main.o")
 
-    #  ei_class = gb(obj[4], 1) # bit format
     ei_class = obj[4]
-    #  ei_data = gb(obj[5], 1) # endianness
     ei_data = obj[5]
-    ei_version = gb(obj[6], 1)
-    ei_osabi = gb(obj[7], 1) # Unix - System V
-    e_type = gb(0x03, 2) # shared object file
-    e_machine = gb(obj[0x12:0x14], 2) # isa type: aarch64
-    e_entry = gb(0, 4) if ei_class == 1 else gb(0, 8) # mem addr of entry point
-    e_phoff = gb(0x34, 4) if ei_class == 1 else gb(0x40, 8) # program header table start
-    e_phentsize = gb(0x20, 2) if ei_class == 1 else gb(0x38, 2) # program header size
-    e_shentsize = gb(0x28, 2) if ei_class == 1 else gb(0x40, 2) # section header size
+    ei_version = obj[6]
+    ei_osabi = obj[7] # Unix - System V
+    e_type = 0x03 # shared object file
+    e_machine = obj[0x12:0x14] # isa type: aarch64
+    e_entry = gb(0, 4) if ei_class == 1 else gb(0, 8) # mem addr of entry point TODO
+    e_phoff = 0x34 if ei_class == 1 else 0x40 # program header table start
 
-    print(ei_class, e_entry)
+    e_phentsize = 0x20 if ei_class == 1 else 0x38 # program header size
+    e_shentsize = 0x28 if ei_class == 1 else 0x40 # section header size
 
-    #  (program_header, e_phnum) = program_header(ei_class, bytes([0, 0, 0, 0]))
-    pht = ProgramHeaderTable()
+    section_types = [SType.TEXT, SType.TEXT]
+    segments = []
+    data = ""
+
+    segment = Segment()
+
+    for stype in section_types:
+        segment.new_section(stype, data)
+
+    segments.append(segment)
+
+    print(len(segments), segments[0].section_headers)
+
+    section_offset = e_phoff + (len(segments) * e_phentsize)
+    pht = ProgramHeaderTable(segments, section_offset)
     e_phnum = len(pht.headers)
-    exit()
 
-    sections = sections()
-    (section_header, e_shnum, e_shstrndx) = section_header(ei_class)
+    section_header_offset = section_offset + sum([len(data) for seg in segments for data in seg.section_data])
 
-    e_shoff = e_phoff + e_phentsize + len(sections)
-    #  e_phnum = 9 # TODO?
-    #  e_shnum = 29 # TODO?
+    print(e_phoff, e_phentsize, section_offset, section_header_offset)
+
+    e_shoff = section_header_offset
+    e_shnum = sum([len(seg.section_headers) for seg in segments])
     #  e_shstrndx = 28 # TODO?
+
+    print(e_shoff, e_shnum)
+
+    exit()
 
     file_header = file_header(ei_class, ei_data, ei_version, ei_osabi, e_type, e_machine, e_entry, e_phoff,
             e_shoff, e_phentsize, e_phnum, e_shentsize, e_shnum, e_shstrndx)
