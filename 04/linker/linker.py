@@ -141,8 +141,9 @@ class Segment:
     def __init__(self):
         pass
 
-    def new_section(self, stype, data):
-        section = Section(stype, data)
+    def new_section(self, header, data, sh_name_offset, data_offset):
+        section = Section()
+        section.new(header, data, sh_name_offset, data_offset)
         self.section_data.append(section.data)
         self.section_headers.append(section.header)
 
@@ -270,17 +271,47 @@ class ProgramHeaderTable:
 
 
 class SName(Enum):
-    TEXT = auto()
-    RODATA = auto()
-    DATA = auto()
-    BSS = auto()
-    SYMTAB = auto()
-    STRTAB = auto()
-    SHSTRTAB = auto()
+    UNDEF = ""
+    BSS = ".bss"
+    COMMENT = ".comment"
+    CTORS = ".ctors"
+    DATA = ".data"
+    DATA1 = ".data1"
+    DEBUG = ".debug"
+    DTORS = ".dtors"
+    DYNAMIC = ".dynamic"
+    DYNSTR = ".dynstr"
+    DYNSYM = ".dynsym"
+    FINI = ".fini"
+    GNUVER = ".gnu.version"
+    GNUVERD = ".gnu.version.d"
+    GNUVERR = ".gnu.version.r"
+    GOT = ".got"
+    HASH = ".hash"
+    INIT = ".init"
+    INTERP = ".interp"
+    LINE = ".line"
+    NOTE = ".note"
+    NOTEABI = ".note.ABI-tag"
+    NOTEGNUB = ".note.gnu.build-id"
+    NOTEGNUS = ".note.GNU-stack"
+    NOTEBSD = ".note.openbsd.ident"
+    PLT = ".plt"
+    RELTEXT = ".rel.text" # shortcut (only support .rel.text)
+    RELATEXT = ".rela.text"
+    RODATA = ".rodata"
+    RODATA1 = ".rodata1"
+    SHSTRTAB = ".shstrtab"
+    STRTAB = ".strtab"
+    SYMTAB = ".symtab"
+    TEXT = ".text"
 
     def __str__(self):
-        return "." + self.name.lower()
+        return "." + self.name.lower()@classmethod
 
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_ 
 
 class SHType(Enum):
     SHT_NULL = 0
@@ -293,6 +324,31 @@ class SHType(Enum):
     SHT_NOTE = 7
     SHT_NOBITS = 8
     SHT_REL = 9
+
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_ 
+
+class SHFlag(Enum):
+    UNDEF = 0
+    SHF_WRITE = 0x1
+    SHF_ALLOC = 0x2
+    SHF_EXECINSTR = 0x4
+    SHF_MERGE = 0x10
+    SHF_STRINGS = 0x20
+    SHF_INFO_LINK = 0x40
+    SHF_LINK_ORDER = 0x80
+    SHF_OS_NONCONFORMING = 0x100
+    SHF_GROUP = 0x200
+    SHF_TLS = 0x400
+    SHF_MASKOS = 0x0FF00000
+    SHF_MASKPROC = 0xF0000000
+    SHF_ORDERED = 0x4000000
+    SHF_EXCLUDE = 0x8000000
+
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_ 
 
 class SectionHeader:
     sh_name = None
@@ -312,11 +368,30 @@ class SectionHeader:
         self.sh_name = header_data[offset:offset+4]
         offset += 4
 
-        self.sh_type = SHType(pb(header_data[offset:offset+4]))
+        self.sh_type = pb(header_data[offset:offset+4])
         offset += 4
 
-        self.sh_flags = header_data[offset:offset+4] if ei_class == 1 else header_data[offset:offset+8]
+        if SHType.has_value(self.sh_type):
+            self.sh_type = SHType(self.sh_type)
+        else:
+            raise Exception("Unknown sh type", self.sh_type)
+
+        sh_flags = pb(header_data[offset:offset+4] if ei_class == 1 else header_data[offset:offset+8])
         offset = offset + 4 if ei_class == 1 else offset + 8
+
+        if sh_flags != 0:
+            self.sh_flags = []
+            for (pos, bit) in enumerate(bin(sh_flags)[:1:-1]):
+                if int(bit) == 1:
+                    val = pow(2, pos)
+                else:
+                    continue
+                if SHFlag.has_value(val):
+                    self.sh_flags.append(SHFlag(val))
+                else:
+                    raise Exception("Unknown flag", val)
+        else:
+            self.sh_flags = None
 
         self.sh_addr = header_data[offset:offset+4] if ei_class == 1 else header_data[offset:offset+8]
         offset = offset + 4 if ei_class == 1 else offset + 8
@@ -339,7 +414,7 @@ class SectionHeader:
         self.sh_entsize = header_data[offset:offset+4] if ei_class == 1 else header_data[offset:offset+8]
         offset = offset + 4 if ei_class == 1 else offset + 8
 
-
+supported_sections = [SName.TEXT, SName.RODATA, SName.DATA, SName.BSS, SName.SYMTAB, SName.STRTAB, SName.SHSTRTAB]
 class Section:
     data = None
     header = None
@@ -350,22 +425,32 @@ class Section:
 
         # parse name from shstrtab
         sh_name_start = pb(section_header.sh_name)
-        sh_name_end = sh_name_start + 1
-        while (shstrtab_data[sh_name_end]):
-            sh_name_end += 1
+        sh_name_end = sh_name_start
+        if shstrtab_data[sh_name_start] != 0:
+            while (shstrtab_data[sh_name_end]):
+                sh_name_end += 1
+
         self.header.sh_name = shstrtab_data[sh_name_start:sh_name_end].decode('ascii')
+        if SName.has_value(self.header.sh_name):
+            self.header.sh_name = SName(self.header.sh_name)
+        else:
+            self.header.sh_name = SName.UNDEF
 
         # parse data from offset
         sh_offset = section_header.sh_offset
         sh_size = section_header.sh_size
         self.data = obj[sh_offset:sh_offset+sh_size]
 
-    def new(self, stype, data):
-        match stype:
+    #  def new_shstrtab(self, data):
+
+
+
+    def new(self, header, data, sh_name_offset, data_offset):
+        match header.sh_name:
             case SName.TEXT:
                 sh_type = SHType.SHT_PROGBITS
-                self.data = self.section_data(sh_type.value, data)
-                self.header = self.section_header(sh_type.value)
+                self.data = data
+                self.header = self.new_header(header, sh_name_offset, data_offset, len(data))
             case SName.RODATA:
                 sh_type = SHType.SHT_PROGBITS
                 pass
@@ -385,29 +470,29 @@ class Section:
                 sh_type = SHType.SHT_STRTAB
                 pass
 
-    def section_data(self, sh_type, data):
-        return "hello"
-
-    def section_header(self, sh_type):
+    def new_header(self, header, sh_name_offset, data_offset, data_size):
         data = bytearray()
 
         # An offset to a string in the .shstrtab section that represents the name of this section.
-        sh_name = bytes([0, 0, 0, 0])
+        sh_name = gb(sh_name_offset, 4)
         data += sh_name
 
         # Identifies the type of this header.
-        sh_type = gb(sh_type, 4)
+        sh_type = gb(header.sh_type.value, 4)
         data += sh_name
 
         # Identifies the attributes of the section.
         sh_flags = None
         if ei_class == 0:
-            sh_flags = bytes([0, 0, 0, 0])
+            sh_flags = gb(sum([sh_flags.value for sh_flags in header.sh_flags]), 4)
         else:
-            sh_flags = bytes([0, 0, 0, 0, 0, 0, 0, 0])
+            sh_flags = gb(sum([sh_flags.value for sh_flags in header.sh_flags]), 8)
+
+        print(sh_flags)
         data += sh_flags
 
         # Virtual address of the section in memory, for sections that are loaded.
+        # TODO
         sh_addr = None
         if ei_class == 0:
             sh_addr = bytes([0, 0, 0, 0])
@@ -418,17 +503,17 @@ class Section:
         # Offset of the section in the file image.
         sh_offset = None
         if ei_class == 0:
-            sh_offset = bytes([0, 0, 0, 0])
+            sh_offset = gb(data_offset, 4)
         else:
-            sh_offset = bytes([0, 0, 0, 0, 0, 0, 0, 0])
+            sh_offset = gb(data_offset, 8)
         data += sh_offset
 
         # Size in bytes of the section in the file image. May be 0.
         sh_size = None
         if ei_class == 0:
-            sh_size = bytes([0, 0, 0, 0])
+            sh_size = gb(data_size, 4)
         else:
-            sh_size = bytes([0, 0, 0, 0, 0, 0, 0, 0])
+            sh_size = gb(data_size, 8)
         data += sh_size
 
         # Contains the section index of an associated section. This field is used for several purposes,
@@ -511,6 +596,8 @@ def gb(b, size):
 def pb(b):
     if type(b) == bytes:
         return int.from_bytes(b, "little")
+    elif type(b) == int:
+        return b
 
     if ei_data == 1:
         return int.from_bytes(b, "little")
@@ -538,42 +625,51 @@ def main():
     # now we have to parse the input obj file, extract the sections to use them for our
     # final elf file
     obj_shs = [] # section headers
-    shstrtab = None
+    obj_shstrtab = None
     offset = obj_shoff
     for i in range(obj_shnum):
         sh = SectionHeader(obj[offset:offset+e_shentsize])
         offset += e_shentsize
         obj_shs.append(sh)
         if sh.sh_type == SHType.SHT_STRTAB: # what about multiple sht_strtab sections? TODO
-            shstrtab = sh
+            obj_shstrtab = sh
 
-    assert(shstrtab is not None)
-    shstrtab_data = obj[shstrtab.sh_offset:shstrtab.sh_offset+shstrtab.sh_size]
+    assert(obj_shstrtab is not None)
+    obj_shstrtab_data = obj[obj_shstrtab.sh_offset:obj_shstrtab.sh_offset+obj_shstrtab.sh_size]
     obj_ss = [] # sections
     for sh in obj_shs:
         s = Section()
-        s.from_sh(sh, obj, shstrtab_data)
+        s.from_sh(sh, obj, obj_shstrtab_data)
         obj_ss.append(s)
 
 
     print("here", [section.header.sh_name for section in obj_ss])
 
-    print(obj_shnum, obj_shoff)
-    exit()
-
-    section_types = [SName.TEXT, SName.TEXT]
     segments = []
-    data = ""
+    shstrtab = None
+    shstrtab_data = bytearray()
 
     segment = Segment()
 
-    for stype in section_types:
-        segment.new_section(stype, data)
+    for s in obj_ss:
+        if s.header.sh_name == SName.SHSTRTAB:
+            pass
+        else:
+            sh_name_offset = 0
+            data_offset = 0
+            segment.new_section(s.header, s.data, sh_name_offset, data_offset)
+
+            str_data = bytearray(s.header.sh_name.value, 'UTF-8') + b'\x00'
+            shstrtab_data += str_data
+            sh_name_offset += len(str_data)
+            data_offset += len(s.data)
+
 
     segments.append(segment)
 
     print(len(segments), segments[0].section_headers)
 
+    exit()
     section_offset = e_phoff + (len(segments) * e_phentsize)
     pht = ProgramHeaderTable(segments, section_offset)
     e_phnum = len(pht.headers)
