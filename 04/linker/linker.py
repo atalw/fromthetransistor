@@ -14,91 +14,99 @@ from enum import Enum
 # Section header table -> linking (connecting program objects) information
 # ----
 
-
 ei_class = None
 ei_data = None
 
-def append_hex(s, h):
-    b = bytearray(h)
-    print(b)
 
-
-def elf_header(ei_class, ei_data, ei_version, ei_osabi, e_type, e_machine, e_entry, e_phoff, e_shoff,
-        e_phentsize, e_phnum, e_shentsize, e_shnum, e_shstrndx):
-
-    data = bytearray()
-
+class ELFHeader:
     # offset 0x00 are 4 byte magic numbers (0x7f + ELF in hex)
-    data += bytearray([0x7f, 0x45, 0x4c, 0x46])
-
+    magic = None
     # This byte is set to either 1 or 2 to signify 32- or 64-bit format, respectively.
-    data += gb(ei_class, 1)
-
-    # This byte is set to either 1 or 2 to signify little or big endianness, respectively. 
+    ei_class = None
+    # This byte is set to either 1 or 2 to signify little or big endianness, respectively.
     # This affects interpretation of multi-byte fields starting with offset 0x10.
-    data += gb(ei_data, 1)
-
+    ei_data = None
     # Set to 1 for the original and current version of ELF.
-    data += gb(ei_version, 1)
-
+    ei_version = None
     # Identifies the target operating system ABI.
-    data += gb(ei_osabi, 1)
-
+    ei_osabi = None
     # Further specifies the ABI version. Its interpretation depends on the target ABI.
-    data += gb(0, 1)
-
-    # Reserved padding bytes. Currently unused. Should be filled with zeros and ignored when read.
-    # 7 bytes
-    data += gb(0, 7)
-
+    ei_abiversion = None
     # Identifies object file type.
-    data += gb(e_type, 2)
-
+    e_type = None
     # Specifies target instruction set architecture. 2 bytes
-    assert(len(e_machine) == 2)
-    data += e_machine
-
-    # Set to 1 for the original version of ELF. 4 bytes
-    data += gb(1, 4)
-
+    e_machine = None
     # This is the memory address of the entry point from where the process starts executing.
     # If the file doesn't have an associated entry point, then this holds zero.
     # 32-bit, 4 bytes long or 64-bit, 8 bytes long
-    data += gb(e_entry, 4) if ei_class == 1 else gb(e_entry, 8)
-
+    e_entry = None
     # Points to the start of the program header table.
-    data += gb(e_phoff, 4) if ei_class == 1 else gb(e_phoff, 8)
-
+    e_phoff = None
     # Points to the start of the section header table.
-    data += gb(e_shoff, 4) if ei_class == 1 else gb(e_shoff, 8)
-
+    e_shoff = None
     # Interpretation of this field depends on the target architecture. 4 bytes
-    data += gb(0, 4)
-
+    e_flags = None
     # Contains the size of this header, normally 64 Bytes for 64-bit and 52 Bytes for 32-bit format.
-    # 2 bytes
-    data += gb(0x34 if ei_class == 1 else 0x40, 2)
-
+    e_ehsize = None
     # Contains the size of a program header table entry.
-    data += gb(e_phentsize, 2)
-
+    e_phentsize = None
     # Contains the number of entries in the program header table.
-    data += gb(e_phnum, 2)
-
+    e_phnum = None
     # Contains the size of a section header table entry.
-    data += gb(e_shentsize, 2)
-
+    e_shentsize = None
     # Contains the number of entries in the section header table.
-    data += gb(e_shnum, 2)
-
+    e_shnum = None
     # Contains index of the section header table entry that contains the section names.
-    data += gb(e_shstrndx, 2)
+    e_shstrndx = None
 
-    assert(len(data) == 0x34 if ei_class == 1 else len(data) == 0x40)
-    return data
+    def __init__(self, data):
+        self.magic = bytearray([0x7f, 0x45, 0x4c, 0x46])
+        self.ei_class = data[4]
+        self.ei_data = data[5]
+        self.ei_version = data[6]
+        self.ei_osabi = data[7] # Unix - System V
+        self.ei_abiversion = data[8]
+        self.e_type = 0x03 # shared object file
+        self.e_machine = data[0x12:0x14] # isa type: aarch64
+        self.e_entry = gb(0, 4) if self.ei_class == 1 else gb(0, 8) # mem addr of entry point TODO
+        self.e_phoff = 0x34 if self.ei_class == 1 else 0x40 # program header table start
+        self.e_phentsize = 0x20 if self.ei_class == 1 else 0x38 # program header size
+        self.e_shentsize = 0x28 if self.ei_class == 1 else 0x40 # section header size
+        self.e_flags = 0
+        self.eh_size = 0x34 if self.ei_class == 1 else 0x40
 
+        global ei_class, ei_data
+        ei_class = self.ei_class
+        ei_data = self.ei_data
 
-# Program header: https://docs.oracle.com/cd/E19683-01/816-1386/chapter6-83432/index.html
+    def to_bin(self):
+        assert(len(self.e_machine) == 2)
+
+        data = bytearray()
+        data += self.magic
+        data += gb(self.ei_class, 1)
+        data += gb(self.ei_data, 1)
+        data += gb(self.ei_version, 1)
+        data += gb(self.ei_osabi, 1)
+        data += gb(self.ei_abiversion, 1)
+        data += gb(0, 7) # padding
+        data += gb(self.e_type, 2)
+        data += self.e_machine
+        data += gb(self.ei_version, 4)
+        data += gb(self.e_entry, 4) if self.ei_class == 1 else gb(self.e_entry, 8)
+        data += gb(self.e_phoff, 4) if self.ei_class == 1 else gb(self.e_phoff, 8)
+        data += gb(self.e_shoff, 4) if self.ei_class == 1 else gb(self.e_shoff, 8)
+        data += gb(self.e_flags, 4)
+        data += gb(self.eh_size, 2)
+        data += gb(self.e_phentsize, 2)
+        data += gb(self.e_phnum, 2)
+        data += gb(self.e_shentsize, 2)
+        data += gb(self.e_shnum, 2)
+        data += gb(self.e_shstrndx, 2)
+
+        assert(len(data) == 0x34 if ei_class == 1 else len(data) == 0x40)
+        return data
+
 
 # Identifies the type of the segment.
 class PType(Enum):
@@ -129,6 +137,58 @@ class PFlags(Enum):
     PF_RWX = 7 # read + write + exec
     PF_MASKPROC = 0xf0000000
 
+# Program header: https://docs.oracle.com/cd/E19683-01/816-1386/chapter6-83432/index.html
+class ProgramHeader:
+    # Identifies the type of the segment.
+    p_type = None
+    # Segment-dependent flags (position for 64-bit structure).
+    p_flags = None
+    # Offset of the segment in the file image.
+    p_offset = None
+    # Virtual address of the segment in memory.
+    p_vaddr = None
+    # On systems where physical address is relevant, reserved for segment's physical address.
+    p_paddr = None
+    # Size in bytes of the segment in the file image. May be 0.
+    p_filesz = None
+    # Size in bytes of the segment in memory. May be 0.
+    p_memsz = None
+    # Segment-dependent flags (position for 32-bit structure).
+    p_flags = None
+    # 0 and 1 specify no alignment. Otherwise should be a positive, integral power of 2, with 
+    # p_vaddr equating p_offset modulus p_align.
+    p_align = None
+
+    def __init__(self, p_type, p_flags, offset):
+        self.p_type = p_type
+        self.p_flags = p_flags
+        self.offset = offset
+
+        # TODO
+        self.p_vaddr = 0
+        self.p_paddr = 0
+        self.p_filesz = 0
+        self.p_memsz = 0
+        self.p_align = 0
+
+    def to_bin(self):
+        data = bytearray()
+
+        data += gb(self.p_type.value, 4)
+        if ei_class == 2:
+            data += gb(self.p_flags.value, 4)
+        data += gb(self.offset, 4) if ei_class == 1 else gb(self.offset, 8)
+        data += gb(self.p_vaddr, 4) if ei_class == 1 else gb(self.p_vaddr, 8)
+        data += gb(self.p_paddr, 4) if ei_class == 1 else gb(self.p_paddr, 8)
+        data += gb(self.p_filesz, 4) if ei_class == 1 else gb(self.p_filesz, 8)
+        data += gb(self.p_memsz, 4) if ei_class == 1 else gb(self.p_memsz, 8)
+        if ei_class == 1:
+            data += gb(self.p_flags.value, 4)
+        data += gb(self.p_align, 4) if ei_class == 1 else gb(self.p_align, 8)
+        assert(len(data) == 0x20 if ei_class == 1 else len(data) == 0x38)
+
+        return data
+
 # The program header table tells the system how to create a process image. It is found at file offset
 # e_phoff, and consists of e_phnum entries, each with size e_phentsize. The layout is slightly
 # different in 32-bit ELF vs 64-bit ELF, because the p_flags are in a different structure location
@@ -143,82 +203,13 @@ class ProgramHeaderTable:
             offset += sum([len(x) for x in seg.section_data])
 
     def new_header(self, p_type, p_flags, offset):
+        return ProgramHeader(p_type, p_flags, offset)
+
+    def to_bin(self):
         data = bytearray()
-
-        ptype = gb(p_type.value, 4)
-        data += ptype
-
-        # Segment-dependent flags (position for 64-bit structure).
-        if ei_class == 2:
-            p_flags = gb(p_flags.value, 4)
-            data += p_flags
-
-        # Offset of the segment in the file image.
-        if ei_class == 1:
-            p_offset = gb(offset, 4)
-        else:
-            p_offset = gb(offset, 8)
-
-        data += p_offset
-
-        # Virtual address of the segment in memory.
-        p_vaddr = None
-        if ei_class == 1:
-            p_vaddr = bytes([0, 0, 0, 0])
-        else:
-            p_vaddr = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-
-        data += p_vaddr
-
-        # On systems where physical address is relevant, reserved for segment's physical address.
-        p_paddr = None
-        if ei_class == 1:
-            p_paddr = bytes([0, 0, 0, 0])
-        else:
-            p_paddr = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-
-        data += p_paddr
-
-        # Size in bytes of the segment in the file image. May be 0.
-        p_filesz = None
-        if ei_class == 1:
-            p_filesz = bytes([0, 0, 0, 0])
-        else:
-            p_filesz = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-
-        data += p_filesz
-
-        # Size in bytes of the segment in memory. May be 0.
-        p_memsz = None
-        if ei_class == 1:
-            p_memsz = bytes([0, 0, 0, 0])
-        else:
-            p_memsz = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-
-        data += p_memsz
-
-        # Segment-dependent flags (position for 32-bit structure).
-        if ei_class == 1:
-            p_flags = gb(p_flags, 4)
-            data += p_flags
-
-        # 0 and 1 specify no alignment. Otherwise should be a positive, integral power of 2, with 
-        # p_vaddr equating p_offset modulus p_align.
-        p_align = None
-        if ei_class == 1:
-            p_align = bytes([0, 0, 0, 0])
-        else:
-            p_align = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-
-        data += p_align
-
-        if ei_class == 1:
-            assert(len(data) == 0x20)
-        else:
-            assert(len(data) == 0x38)
-
+        for header in self.headers:
+            data += header.to_bin()
         return data
-
 
 class SHName(Enum):
     UNDEF = ""
@@ -323,16 +314,14 @@ class SectionHeader:
     # Contains the size, in bytes, of each entry, for sections that contain fixed-size entries. 
     # Otherwise, this field contains zero.
     sh_entsize = None
-    data_offset = None
-    data_size = None
 
-    def parse(self, header_data):
+    def __init__(self, data):
         offset = 0
 
-        self.sh_name_offset = header_data[offset:offset+4]
+        self.sh_name_offset = data[offset:offset+4]
         offset += 4
 
-        self.sh_type = pb(header_data[offset:offset+4])
+        self.sh_type = pb(data[offset:offset+4])
         offset += 4
 
         if SHType.has_value(self.sh_type):
@@ -340,16 +329,15 @@ class SectionHeader:
         else:
             raise Exception("Unknown sh type", self.sh_type)
 
-        sh_flags = pb(header_data[offset:offset+4] if ei_class == 1 else header_data[offset:offset+8])
+        sh_flags = pb(data[offset:offset+4] if ei_class == 1 else data[offset:offset+8])
         offset = offset + 4 if ei_class == 1 else offset + 8
 
         if sh_flags != 0:
             self.sh_flags = []
             for (pos, bit) in enumerate(bin(sh_flags)[:1:-1]):
-                if int(bit) == 1:
-                    val = pow(2, pos)
-                else:
+                if int(bit) != 1:
                     continue
+                val = pow(2, pos)
                 if SHFlag.has_value(val):
                     self.sh_flags.append(SHFlag(val))
                 else:
@@ -357,25 +345,25 @@ class SectionHeader:
         else:
             self.sh_flags = [SHFlag.UNDEF]
 
-        self.sh_addr = header_data[offset:offset+4] if ei_class == 1 else header_data[offset:offset+8]
+        self.sh_addr = data[offset:offset+4] if ei_class == 1 else data[offset:offset+8]
         offset = offset + 4 if ei_class == 1 else offset + 8
 
-        self.sh_offset= pb(header_data[offset:offset+4] if ei_class == 1 else header_data[offset:offset+8])
+        self.sh_offset= pb(data[offset:offset+4] if ei_class == 1 else data[offset:offset+8])
         offset = offset + 4 if ei_class == 1 else offset + 8
 
-        self.sh_size = pb(header_data[offset:offset+4] if ei_class == 1 else header_data[offset:offset+8])
+        self.sh_size = pb(data[offset:offset+4] if ei_class == 1 else data[offset:offset+8])
         offset = offset + 4 if ei_class == 1 else offset + 8
 
-        self.sh_link = header_data[offset:offset+4]
+        self.sh_link = data[offset:offset+4]
         offset += 4
 
-        self.sh_info = header_data[offset:offset+4]
+        self.sh_info = data[offset:offset+4]
         offset += 4
 
-        self.sh_addralign = header_data[offset:offset+4] if ei_class == 1 else header_data[offset:offset+8]
+        self.sh_addralign = data[offset:offset+4] if ei_class == 1 else data[offset:offset+8]
         offset = offset + 4 if ei_class == 1 else offset + 8
 
-        self.sh_entsize = header_data[offset:offset+4] if ei_class == 1 else header_data[offset:offset+8]
+        self.sh_entsize = data[offset:offset+4] if ei_class == 1 else data[offset:offset+8]
         offset = offset + 4 if ei_class == 1 else offset + 8
 
     def update_header_name(self, shstrtab_data):
@@ -395,86 +383,27 @@ class SectionHeader:
     # Convert object to binary stream
     def to_bin(self):
         data = bytearray()
+        data += gb(self.sh_name_offset, 4)
+        data += gb(self.sh_type.value, 4)
+        data += (gb(sum([sh_flags.value for sh_flags in self.sh_flags]), 4) 
+                if ei_class == 1 else gb(sum([sh_flags.value for sh_flags in self.sh_flags]), 8))
+        data += gb(0, 4) if ei_class ==1 else gb(0, 8) # sh_addr TODO
+        data += gb(self.sh_offset, 4) if ei_class == 1 else gb(self.sh_offset, 8)
+        data += gb(self.sh_size, 4) if ei_class == 1 else gb(self.sh_size, 8)
+        data += gb(0, 4) # sh_link
+        data += gb(0, 4) # sh_info
+        data += gb(0, 4) if ei_class == 1 else gb(0, 8) # sh_addralign TODO
+        data += gb(0, 4) if ei_class == 1 else gb(0, 8) # sh_entsize TODO
 
-        sh_name = gb(self.sh_name_offset, 4)
-        data += sh_name
-
-        sh_type = gb(self.sh_type.value, 4)
-        data += sh_type
-
-        sh_flags = None
-        if ei_class == 0:
-            sh_flags = gb(sum([sh_flags.value for sh_flags in self.sh_flags]), 4)
-        else:
-            sh_flags = gb(sum([sh_flags.value for sh_flags in self.sh_flags]), 8)
-
-        data += sh_flags
-
-        # TODO
-        sh_addr = None
-        if ei_class == 0:
-            sh_addr = bytes([0, 0, 0, 0])
-        else:
-            sh_addr = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-        data += sh_addr
-
-        sh_offset = None
-        if ei_class == 0:
-            sh_offset = gb(self.data_offset, 4)
-        else:
-            sh_offset = gb(self.data_offset, 8)
-        data += sh_offset
-
-        sh_size = None
-        if ei_class == 0:
-            sh_size = gb(self.data_size, 4)
-        else:
-            sh_size = gb(self.data_size, 8)
-        data += sh_size
-
-        sh_link = gb(0, 4)
-        data += sh_link
-
-        sh_info = gb(0, 4)
-        data += sh_info
-
-        sh_addralign = None
-        if ei_class == 0:
-            sh_addralign = bytes([0, 0, 0, 0])
-        else:
-            sh_addralign = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-        data += sh_addralign
-
-        sh_entsize = None
-        if ei_class == 0:
-            sh_entsize = bytes([0, 0, 0, 0])
-        else:
-            sh_entsize = bytes([0, 0, 0, 0, 0, 0, 0, 0])
-        data += sh_entsize
-
-        if ei_class == 0:
-            assert(len(data) == 0x28)
-        else:
-            assert(len(data) == 0x40)
-
+        assert(len(data) == 0x28 if ei_class == 1 else len(data) == 0x40)
         return data
 
-
-# Only supporting export of these sections for simplicity
-# .text: Opcodes (binary assembly) that can be executed
-# .rodata: Read Only data like string constants
-# .data: Initialized global variables, space for values
-# .bss: Un-initialized global variables, no space for values
-# .symtab: Table of publicly available symbols for funcs/vars
-# .strtab: Null-terminated strings, often names of things in .symtab
-# .shstrab: Null-terminated strings, often names section headers
-supported_sections = [SHName.TEXT, SHName.RODATA, SHName.DATA, SHName.BSS, SHName.SYMTAB, SHName.STRTAB, SHName.SHSTRTAB]
 
 class Section:
     def __init__(self, data, header):
         self.data = data
         self.header = header
-        self.header.data_size = len(data)
+        self.header.sh_size = len(data)
 
 class Segment:
     section_data = []
@@ -483,6 +412,15 @@ class Segment:
     def new_section(self, section):
         self.section_headers.append(section.header)
         self.section_data.append(section.data)
+
+    def data_to_bin(self):
+        return bytearray().join(self.section_data)
+
+    def headers_to_bin(self):
+        data = bytearray()
+        for header in self.section_headers:
+            data += header.to_bin()
+        return data
 
 
 def import_obj(filename):
@@ -518,28 +456,31 @@ def pb(b):
     return int.from_bytes(b, "little" if ei_data ==1 else "big")
 
 # ---- Parse the input object file ----
-def parse_input(data, e_shentsize) -> [Section]:
-    shnum = pb(data[0x30:0x30+2]) if ei_class == 1 else pb(data[0x3c:0x3c+2])
-    shoff = pb(data[0x20:0x20+4]) if ei_class == 1 else pb(data[0x28:0x28+8])
+def parse_input(data) -> (ELFHeader, [Section]):
+    elf_header = ELFHeader(data)
 
-    shs = [] # section headers
+    shnum = pb(data[0x30:0x30+2] if ei_class == 1 else data[0x3c:0x3c+2])
+    shoff = pb(data[0x20:0x20+4] if ei_class == 1 else data[0x28:0x28+8])
+
+    section_headers = [] # section headers
     offset = shoff
     shstrtab = None
 
     for i in range(shnum):
-        sh = SectionHeader()
-        sh.parse(data[offset:offset+e_shentsize])
-        offset += e_shentsize
-        shs.append(sh)
+        sh = SectionHeader(data[offset:offset+elf_header.e_shentsize])
+        offset += elf_header.e_shentsize
+        section_headers.append(sh)
         if sh.sh_type == SHType.SHT_STRTAB: # what about multiple sht_strtab sections? TODO
             shstrtab = sh
+
+    print(len(section_headers))
 
     # Extract section names
     assert(shstrtab is not None)
     shstrtab_data = data[shstrtab.sh_offset:shstrtab.sh_offset+shstrtab.sh_size]
     sections = [] # section headers with data
 
-    for sh in shs:
+    for sh in section_headers:
         # parse data from offset
         sh.update_header_name(shstrtab_data)
         sh_offset = sh.sh_offset
@@ -547,28 +488,23 @@ def parse_input(data, e_shentsize) -> [Section]:
         s = Section(data[sh_offset:sh_offset+sh_size], sh)
         sections.append(s)
 
-    return sections
+    return (elf_header, sections)
+
+# Only supporting export of these sections for simplicity
+# .text: Opcodes (binary assembly) that can be executed
+# .rodata: Read Only data like string constants
+# .data: Initialized global variables, space for values
+# .bss: Un-initialized global variables, no space for values
+# .symtab: Table of publicly available symbols for funcs/vars
+# .strtab: Null-terminated strings, often names of things in .symtab
+# .shstrab: Null-terminated strings, often names section headers
+supported_sections = [SHName.TEXT, SHName.RODATA, SHName.DATA, SHName.BSS, SHName.SYMTAB, SHName.STRTAB, SHName.SHSTRTAB]
 
 def main():
-    global ei_class, ei_data
     obj = import_obj("linux-main.o")
     print(obj)
 
-    ei_class = obj[4]
-    ei_data = obj[5]
-    ei_version = obj[6]
-    ei_osabi = obj[7] # Unix - System V
-    e_type = 0x03 # shared object file
-    e_machine = obj[0x12:0x14] # isa type: aarch64
-    e_entry = gb(0, 4) if ei_class == 1 else gb(0, 8) # mem addr of entry point TODO
-    e_phoff = 0x34 if ei_class == 1 else 0x40 # program header table start
-    e_phentsize = 0x20 if ei_class == 1 else 0x38 # program header size
-    e_shentsize = 0x28 if ei_class == 1 else 0x40 # section header size
-
-    # now we have to parse the input obj file, extract the sections to use them for our
-    # final elf file
-
-    input_sections = parse_input(obj, e_shentsize)
+    elf_header, input_sections = parse_input(obj)
 
     segments = []
     shstrtab = None
@@ -593,7 +529,7 @@ def main():
             strtab_index = len(input_sections) - idx
 
         if s.header.sh_name in supported_sections:
-            s.header.data_offset = data_offset
+            s.header.sh_offset = data_offset
             segment.new_section(s)
             data_offset += len(s.data)
 
@@ -611,37 +547,21 @@ def main():
 
     segments.append(segment)
 
-    #  print(len(segments), segments[0].section_headers)
-
-    section_offset = e_phoff + (len(segments) * e_phentsize)
+    section_offset = elf_header.e_phoff + (len(segments) * elf_header.e_phentsize)
     pht = ProgramHeaderTable(segments, section_offset)
-    e_phnum = len(pht.headers)
 
-    section_header_offset = section_offset + sum([len(data) for seg in segments for data in seg.section_data])
+    # update Elf header
+    elf_header.e_phnum = len(pht.headers)
+    elf_header.e_shoff = section_offset + sum([len(data) for seg in segments for data in seg.section_data])
+    elf_header.e_shnum = sum([len(seg.section_headers) for seg in segments])
+    elf_header.e_shstrndx = e_shstrndx
 
-    #  print(e_phoff, e_phentsize, section_offset, section_header_offset)
-
-    e_shoff = section_header_offset
-    e_shnum = sum([len(seg.section_headers) for seg in segments])
-
-    #  print(e_shoff, e_shnum)
-
-
-    file_header = elf_header(ei_class, ei_data, ei_version, ei_osabi, e_type, e_machine, e_entry, e_phoff,
-            e_shoff, e_phentsize, e_phnum, e_shentsize, e_shnum, e_shstrndx)
-
-    program_headers = b''.join(pht.headers)
-    section_data = b''.join(segments[0].section_data)
-    section_headers = b''.join([header.to_bin() for header in segments[0].section_headers])
-
-    #  print(program_headers)
-    #  print("section data", section_data)
-
-    data = file_header + program_headers + section_data + section_headers
+    data = elf_header.to_bin() + pht.to_bin() + segments[0].data_to_bin() + segments[0].headers_to_bin()
     print("--------------------------------------")
     print(data)
 
-    print("e_shnum: ", e_shnum)
+    # TODO
+    # drain read function
 
     export_exec(data)
     print("done writing")
