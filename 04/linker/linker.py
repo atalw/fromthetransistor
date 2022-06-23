@@ -168,7 +168,8 @@ class ProgramHeader:
     def __init__(self, p_type, p_flags, offset):
         self.p_type = p_type
         self.p_flags = p_flags
-        self.offset = offset
+        #  self.offset = offset
+        self.offset = 0
 
         # TODO
         self.p_vaddr = 0
@@ -204,6 +205,13 @@ class ProgramHeaderTable:
         section_offset = elf_header.e_phoff + (len(segments) * elf_header.e_phentsize)
         for seg in segments:
             header = self.new_header(PType.PT_LOAD, PFlags.PF_RX, section_offset)
+            #  header.p_vaddr = 0x8050000
+            #  header.p_filesz = 0x32fd
+            #  header.p_memsz = 0x32fd
+            header.p_vaddr = 0
+            header.p_filesz = 0x9cc
+            header.p_memsz = 0x9cc
+            header.p_align = 0x10000
             self.headers.append(header)
             section_offset += sum([len(x) for x in seg.section_data])
 
@@ -250,6 +258,8 @@ class SHName(Enum):
     SHSTRTAB = ".shstrtab"
     STRTAB = ".strtab"
     SYMTAB = ".symtab"
+    EHFRAME = ".eh_frame"
+    RELAEHFRAME = ".rela.eh_frame"
     TEXT = ".text"
 
     @classmethod
@@ -515,6 +525,7 @@ def generate_segments(elf_header, input_sections) -> [Segment]:
     # update the offsets for all the section headers by the phentsize
     data_offset = elf_header.eh_size
     sh_name_offset = 0
+    symtab_idx = None
     idx = 0
     for s in input_sections:
         if s.header.sh_name == SHName.SHSTRTAB:
@@ -541,9 +552,10 @@ def generate_segments(elf_header, input_sections) -> [Segment]:
             else:
                 s.header.sh_name_offset = sh_name_offset
                 s.header.sh_offset = data_offset
-                str_name = bytearray(s.header.sh_name.value, 'ascii') + b'\x00'
-                shstrtab_data += str_name
-                sh_name_offset += len(str_name)
+
+            str_name = bytearray(s.header.sh_name.value, 'ascii') + b'\x00'
+            shstrtab_data += str_name
+            sh_name_offset += len(str_name)
 
             segment.new_section(s)
             data_offset += len(s.data)
@@ -552,6 +564,25 @@ def generate_segments(elf_header, input_sections) -> [Segment]:
                 elf_header.e_shstrndx = idx
 
             idx += 1
+
+    for i, sh in enumerate(segment.section_headers):
+        if sh.sh_type == SHType.SHT_REL or sh.sh_type == SHType.SHT_RELA:
+            match sh.sh_name:
+                case SHName.RELATEXT:
+                    idx = next((idx for idx, x in enumerate(segment.section_headers) if x.sh_name == SHName.TEXT), None)
+                    assert(idx is not None)
+                    segment.section_headers[i].sh_info = idx
+                    segment.section_headers[i].sh_link = symtab_idx
+                    segment.section_headers[i].sh_entsize = 0x18
+                case SHName.RELAEHFRAME:
+                    idx = next((idx for idx, x in enumerate(segment.section_headers) if x.sh_name == SHName.EHFRAME), None)
+                    assert(idx is not None)
+                    segment.section_headers[i].sh_info = idx
+                    segment.section_headers[i].sh_link = symtab_idx
+                    segment.section_headers[i].sh_entsize = 0x18
+                case _:
+                    raise Exception(f"Relocation for {sh.sh_name} not yet supported")
+
 
     assert(elf_header.e_shstrndx is not None)
     segment.section_data[elf_header.e_shstrndx]= shstrtab_data
@@ -569,7 +600,8 @@ def generate_segments(elf_header, input_sections) -> [Segment]:
 # .symtab: Table of publicly available symbols for funcs/vars
 # .strtab: Null-terminated strings, often names of things in .symtab
 # .shstrab: Null-terminated strings, often names section headers
-supported_sections = [SHName.TEXT, SHName.RODATA, SHName.DATA, SHName.BSS, SHName.SYMTAB, SHName.STRTAB, SHName.SHSTRTAB]
+supported_sections = [SHName.TEXT, SHName.RODATA, SHName.DATA, SHName.BSS, SHName.EHFRAME,
+        SHName.SYMTAB, SHName.STRTAB, SHName.SHSTRTAB, SHName.RELATEXT, SHName.RELAEHFRAME, SHName.COMMENT]
 
 def main():
     obj = import_obj("linux-main.o")
