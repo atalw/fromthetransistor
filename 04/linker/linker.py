@@ -17,7 +17,6 @@ from enum import Enum
 ei_class = None
 ei_data = None
 
-
 class ELFHeader:
     # offset 0x00 are 4 byte magic numbers (0x7f + ELF in hex)
     magic = None
@@ -182,15 +181,13 @@ class ProgramHeader:
         data = bytearray()
 
         data += gb(self.p_type.value, 4)
-        if ei_class == 2:
-            data += gb(self.p_flags.value, 4)
+        if ei_class == 2: data += gb(self.p_flags.value, 4)
         data += gb(self.offset, 4) if ei_class == 1 else gb(self.offset, 8)
         data += gb(self.p_vaddr, 4) if ei_class == 1 else gb(self.p_vaddr, 8)
         data += gb(self.p_paddr, 4) if ei_class == 1 else gb(self.p_paddr, 8)
         data += gb(self.p_filesz, 4) if ei_class == 1 else gb(self.p_filesz, 8)
         data += gb(self.p_memsz, 4) if ei_class == 1 else gb(self.p_memsz, 8)
-        if ei_class == 1:
-            data += gb(self.p_flags.value, 4)
+        if ei_class == 1: data += gb(self.p_flags.value, 4)
         data += gb(self.p_align, 4) if ei_class == 1 else gb(self.p_align, 8)
         assert(len(data) == 0x20 if ei_class == 1 else len(data) == 0x38)
 
@@ -246,7 +243,7 @@ class SHName(Enum):
     NOTEGNUS = ".note.GNU-stack"
     NOTEBSD = ".note.openbsd.ident"
     PLT = ".plt"
-    RELTEXT = ".rel.text" # shortcut (only support .rel.text)
+    RELTEXT = ".rel.text" # shortcut (only support .rel.text, should be .rel.{NAME})
     RELATEXT = ".rela.text"
     RODATA = ".rodata"
     RODATA1 = ".rodata1"
@@ -254,9 +251,6 @@ class SHName(Enum):
     STRTAB = ".strtab"
     SYMTAB = ".symtab"
     TEXT = ".text"
-
-    def __str__(self):
-        return "." + self.name.lower()
 
     @classmethod
     def has_value(cls, value):
@@ -369,11 +363,13 @@ class SectionHeader:
         self.sh_info = data[offset:offset+4]
         offset += 4
 
-        self.sh_addralign = data[offset:offset+4] if ei_class == 1 else data[offset:offset+8]
+        self.sh_addralign = pb(data[offset:offset+4] if ei_class == 1 else data[offset:offset+8])
         offset = offset + 4 if ei_class == 1 else offset + 8
 
         self.sh_entsize = data[offset:offset+4] if ei_class == 1 else data[offset:offset+8]
         offset = offset + 4 if ei_class == 1 else offset + 8
+
+        self.sh_entsize = 0
 
     def update_header_name(self, shstrtab_data):
         # parse name from shstrtab
@@ -394,15 +390,15 @@ class SectionHeader:
         data = bytearray()
         data += gb(self.sh_name_offset, 4)
         data += gb(self.sh_type.value, 4)
-        data += (gb(sum([sh_flags.value for sh_flags in self.sh_flags]), 4) 
+        data += (gb(sum([sh_flags.value for sh_flags in self.sh_flags]), 4)
                 if ei_class == 1 else gb(sum([sh_flags.value for sh_flags in self.sh_flags]), 8))
-        data += gb(0, 4) if ei_class ==1 else gb(0, 8) # sh_addr TODO
+        data += gb(self.sh_addr, 4) if ei_class ==1 else gb(self.sh_addr, 8)
         data += gb(self.sh_offset, 4) if ei_class == 1 else gb(self.sh_offset, 8)
         data += gb(self.sh_size, 4) if ei_class == 1 else gb(self.sh_size, 8)
-        data += gb(0, 4) # sh_link
-        data += gb(0, 4) # sh_info
-        data += gb(0, 4) if ei_class == 1 else gb(0, 8) # sh_addralign TODO
-        data += gb(0, 4) if ei_class == 1 else gb(0, 8) # sh_entsize TODO
+        data += gb(self.sh_link, 4)
+        data += gb(self.sh_info, 4)
+        data += gb(self.sh_addralign, 4) if ei_class == 1 else gb(self.sh_addralign, 8)
+        data += gb(self.sh_entsize, 4) if ei_class == 1 else gb(self.sh_entsize, 8)
 
         assert(len(data) == 0x28 if ei_class == 1 else len(data) == 0x40)
         return data
@@ -410,6 +406,9 @@ class SectionHeader:
 
 class Section:
     def __init__(self, data, header):
+        #  if header.sh_name == SHName.SHSTRTAB:
+        #      self.data = data.encode('ascii')
+        #  else:
         self.data = data
         self.header = header
         self.header.sh_size = len(data)
@@ -421,6 +420,10 @@ class Segment:
     def new_section(self, section):
         self.section_headers.append(section.header)
         self.section_data.append(section.data)
+
+    def update_offsets(self, elf_header):
+        for header in self.section_headers:
+            header.sh_offset += elf_header.e_phentsize
 
     def data_to_bin(self):
         return bytearray().join(self.section_data)
@@ -482,16 +485,18 @@ def parse_input(data) -> (ELFHeader, [Section]):
         if sh.sh_type == SHType.SHT_STRTAB: # what about multiple sht_strtab sections? TODO
             shstrtab = sh
 
-    # Extract section names
+    # Extract section names so we can assign it on the fly
     assert(shstrtab is not None)
     shstrtab_data = data[shstrtab.sh_offset:shstrtab.sh_offset+shstrtab.sh_size]
     sections = [] # section headers with data
 
+    size = 0
     for sh in section_headers:
         # parse data from offset
         sh.update_header_name(shstrtab_data)
         sh_offset = sh.sh_offset
         sh_size = sh.sh_size
+        size += sh_size
         s = Section(data[sh_offset:sh_offset+sh_size], sh)
         sections.append(s)
 
@@ -506,7 +511,9 @@ def generate_segments(elf_header, input_sections) -> [Segment]:
     # hardcode one segment for now
     segment = Segment()
 
-    data_offset = 0
+    # We don't know e_phentsize at this point, so after constructing the program header table,
+    # update the offsets for all the section headers by the phentsize
+    data_offset = elf_header.eh_size
     sh_name_offset = 0
     idx = 0
     for s in input_sections:
@@ -515,24 +522,41 @@ def generate_segments(elf_header, input_sections) -> [Segment]:
         elif s.header.sh_name == SHName.STRTAB:
             symtab_idx = next((idx for idx, x in enumerate(segment.section_headers) if x.sh_name == SHName.SYMTAB), None)
             assert(symtab_idx is not None)
+
             segment.section_headers[symtab_idx].sh_link = idx
             segment.section_headers[symtab_idx].sh_info = 12 # hardcoding just cuz
-            strtab_index = len(input_sections) - idx
+            segment.section_headers[symtab_idx].sh_entsize = 24
 
-        if s.header.sh_name in supported_sections:
-            s.header.sh_offset = data_offset
+        if s.header.sh_name in supported_sections or s.header.sh_type == SHType.SHT_NULL:
+            if s.header.sh_type == SHType.SHT_NULL:
+                s.header.sh_name_offset = 0
+                s.header.sh_flags = [SHFlag.UNDEF]
+                s.header.sh_addr = 0
+                s.header.sh_offset = 0
+                s.header.sh_size = 0
+                s.header.sh_link = 0
+                s.header.sh_info = 0
+                s.header.sh_addralign = 0
+                s.header.sh_entsize = 0
+            else:
+                s.header.sh_name_offset = sh_name_offset
+                s.header.sh_offset = data_offset
+                str_name = bytearray(s.header.sh_name.value, 'ascii') + b'\x00'
+                shstrtab_data += str_name
+                sh_name_offset += len(str_name)
+
             segment.new_section(s)
             data_offset += len(s.data)
 
-            str_name = bytearray(s.header.sh_name.value, 'ascii') + b'\x00'
-            #  str_name = bytearray(s.header.sh_name.value, 'ascii')
-            shstrtab_data += str_name
-            sh_name_offset += len(str_name)
             if s.header.sh_name == SHName.SHSTRTAB:
                 elf_header.e_shstrndx = idx
+
             idx += 1
 
     assert(elf_header.e_shstrndx is not None)
+    segment.section_data[elf_header.e_shstrndx]= shstrtab_data
+    segment.section_headers[elf_header.e_shstrndx].sh_size = len(shstrtab_data)
+
     segments.append(segment)
 
     return segments
@@ -549,7 +573,6 @@ supported_sections = [SHName.TEXT, SHName.RODATA, SHName.DATA, SHName.BSS, SHNam
 
 def main():
     obj = import_obj("linux-main.o")
-    #  print(obj)
     # Parse input obj file
     elf_header, input_sections = parse_input(obj)
     # Create sections for output ELF file
@@ -558,6 +581,9 @@ def main():
     pht = ProgramHeaderTable(segments, elf_header)
     # Update elf with new data
     elf_header.update(pht, segments)
+    # We don't know phentsize before constructing the program header table, so now that we do, update
+    # the offsets for each section header by phentsize
+    [segment.update_offsets(elf_header) for segment in segments]
     # Create collated bye array of all the sections
     data = elf_header.to_bin() + pht.to_bin() + segments[0].data_to_bin() + segments[0].headers_to_bin()
     # Write to file
