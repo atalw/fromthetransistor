@@ -79,6 +79,13 @@ class ELFHeader:
         ei_class = self.ei_class
         ei_data = self.ei_data
 
+    # Update values after construction of program header table and segments
+    def update(self, program_header_table, segments):
+        self.e_phnum = len(program_header_table.headers)
+        section_offset = self.e_phoff + (len(segments) * self.e_phentsize)
+        self.e_shoff = section_offset + sum([len(data) for seg in segments for data in seg.section_data])
+        self.e_shnum = sum([len(seg.section_headers) for seg in segments])
+
     def to_bin(self):
         assert(len(self.e_machine) == 2)
 
@@ -196,11 +203,12 @@ class ProgramHeader:
 class ProgramHeaderTable:
     headers = []
 
-    def __init__(self, segments, offset):
+    def __init__(self, segments, elf_header):
+        section_offset = elf_header.e_phoff + (len(segments) * elf_header.e_phentsize)
         for seg in segments:
-            header = self.new_header(PType.PT_LOAD, PFlags.PF_RX, offset)
+            header = self.new_header(PType.PT_LOAD, PFlags.PF_RX, section_offset)
             self.headers.append(header)
-            offset += sum([len(x) for x in seg.section_data])
+            section_offset += sum([len(x) for x in seg.section_data])
 
     def new_header(self, p_type, p_flags, offset):
         return ProgramHeader(p_type, p_flags, offset)
@@ -332,6 +340,7 @@ class SectionHeader:
         sh_flags = pb(data[offset:offset+4] if ei_class == 1 else data[offset:offset+8])
         offset = offset + 4 if ei_class == 1 else offset + 8
 
+        # flags are  1-bit values
         if sh_flags != 0:
             self.sh_flags = []
             for (pos, bit) in enumerate(bin(sh_flags)[:1:-1]):
@@ -473,8 +482,6 @@ def parse_input(data) -> (ELFHeader, [Section]):
         if sh.sh_type == SHType.SHT_STRTAB: # what about multiple sht_strtab sections? TODO
             shstrtab = sh
 
-    print(len(section_headers))
-
     # Extract section names
     assert(shstrtab is not None)
     shstrtab_data = data[shstrtab.sh_offset:shstrtab.sh_offset+shstrtab.sh_size]
@@ -490,40 +497,24 @@ def parse_input(data) -> (ELFHeader, [Section]):
 
     return (elf_header, sections)
 
-# Only supporting export of these sections for simplicity
-# .text: Opcodes (binary assembly) that can be executed
-# .rodata: Read Only data like string constants
-# .data: Initialized global variables, space for values
-# .bss: Un-initialized global variables, no space for values
-# .symtab: Table of publicly available symbols for funcs/vars
-# .strtab: Null-terminated strings, often names of things in .symtab
-# .shstrab: Null-terminated strings, often names section headers
-supported_sections = [SHName.TEXT, SHName.RODATA, SHName.DATA, SHName.BSS, SHName.SYMTAB, SHName.STRTAB, SHName.SHSTRTAB]
 
-def main():
-    obj = import_obj("linux-main.o")
-    print(obj)
-
-    elf_header, input_sections = parse_input(obj)
-
+def generate_segments(elf_header, input_sections) -> [Segment]:
     segments = []
     shstrtab = None
     shstrtab_data = bytearray()
 
-    # hardcode one segment
+    # hardcode one segment for now
     segment = Segment()
 
     data_offset = 0
     sh_name_offset = 0
     idx = 0
-    e_shstrndx = None
     for s in input_sections:
         if s.header.sh_name == SHName.SHSTRTAB:
             pass
         elif s.header.sh_name == SHName.STRTAB:
             symtab_idx = next((idx for idx, x in enumerate(segment.section_headers) if x.sh_name == SHName.SYMTAB), None)
             assert(symtab_idx is not None)
-            print(symtab_idx)
             segment.section_headers[symtab_idx].sh_link = idx
             segment.section_headers[symtab_idx].sh_info = 12 # hardcoding just cuz
             strtab_index = len(input_sections) - idx
@@ -538,31 +529,38 @@ def main():
             shstrtab_data += str_name
             sh_name_offset += len(str_name)
             if s.header.sh_name == SHName.SHSTRTAB:
-                print("hereeeeeeee")
-                print(s.header.sh_type)
-                e_shstrndx = idx
+                elf_header.e_shstrndx = idx
             idx += 1
 
-    assert(e_shstrndx is not None)
-
+    assert(elf_header.e_shstrndx is not None)
     segments.append(segment)
 
-    section_offset = elf_header.e_phoff + (len(segments) * elf_header.e_phentsize)
-    pht = ProgramHeaderTable(segments, section_offset)
+    return segments
 
-    # update Elf header
-    elf_header.e_phnum = len(pht.headers)
-    elf_header.e_shoff = section_offset + sum([len(data) for seg in segments for data in seg.section_data])
-    elf_header.e_shnum = sum([len(seg.section_headers) for seg in segments])
-    elf_header.e_shstrndx = e_shstrndx
+# Only supporting export of these sections for simplicity
+# .text: Opcodes (binary assembly) that can be executed
+# .rodata: Read Only data like string constants
+# .data: Initialized global variables, space for values
+# .bss: Un-initialized global variables, no space for values
+# .symtab: Table of publicly available symbols for funcs/vars
+# .strtab: Null-terminated strings, often names of things in .symtab
+# .shstrab: Null-terminated strings, often names section headers
+supported_sections = [SHName.TEXT, SHName.RODATA, SHName.DATA, SHName.BSS, SHName.SYMTAB, SHName.STRTAB, SHName.SHSTRTAB]
 
+def main():
+    obj = import_obj("linux-main.o")
+    #  print(obj)
+    # Parse input obj file
+    elf_header, input_sections = parse_input(obj)
+    # Create sections for output ELF file
+    segments = generate_segments(elf_header, input_sections)
+    # Create program header table
+    pht = ProgramHeaderTable(segments, elf_header)
+    # Update elf with new data
+    elf_header.update(pht, segments)
+    # Create collated bye array of all the sections
     data = elf_header.to_bin() + pht.to_bin() + segments[0].data_to_bin() + segments[0].headers_to_bin()
-    print("--------------------------------------")
-    print(data)
-
-    # TODO
-    # drain read function
-
+    # Write to file
     export_exec(data)
     print("done writing")
 
