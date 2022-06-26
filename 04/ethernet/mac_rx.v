@@ -33,7 +33,7 @@ module mac_rx(
     `define ETHERTYPE       4'd5
     `define PAYLOAD         4'd6
     `define FCS             4'd7
-    `define IGP             4'd8
+    `define IPG             4'd8
 
     initial begin
         r_stage = `IDLE;
@@ -97,7 +97,7 @@ module mac_rx(
                 end
 
                 `ETHERTYPE: begin
-                    r_txen = 1'b1;
+                    r_txen = 1'b0;
                     r_ether_type[(1-r_offset)*8 +: 8] = in_rxd;
                     r_offset += 12'd1;
                     if (r_offset == 12'd2) begin
@@ -107,13 +107,15 @@ module mac_rx(
                 end
 
                 `PAYLOAD: begin
+                    r_txen = 1'b1;
+                    r_txd = in_rxd;
                 end
 
-                `IGP: begin
+                `IPG: begin
+                    $display("should never be here");
+                    $finish;
                 end
-
             endcase
-
         end else begin
             r_stage = `IDLE;
             r_offset = 12'd0;

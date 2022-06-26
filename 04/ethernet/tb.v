@@ -15,14 +15,19 @@ module tb;
     reg [23:0] r_offset;
     reg r_txen;
     reg [7:0] r_txd;
-    reg r_rxen;
-    reg [7:0] r_rxd;
     reg [159:0] r_input_data;
+
+    wire w_rx_ready;
+    wire w_rxen;
+    wire [7:0] w_rxd;
+
+    reg r_dll_en = 0;
+    reg [7:0] r_dll_d = 0;
 
     assign in_txen = r_txen;
     assign in_txd = r_txd;
-    assign in_rxen = r_rxen;
-    assign in_rxd = r_rxd;
+    assign in_rxen = w_rxen;
+    assign in_rxd = w_rxd;
 
     eth_controller eth_controller(
         .in_txen(in_txen),
@@ -47,7 +52,8 @@ module tb;
         r_txen = 0;
         r_input_data = 160'h00_01_02_03_04_05_06_07_08_09_0a_0b_0c_0d_0e_0f_10_11_12_13;
         r_txen = 1;
-        r_rxen = 0;
+        // r_rxen = 0;
+        // r_rx_ready = 1;
     end
 
     always begin
@@ -64,22 +70,25 @@ module tb;
                 r_txen <= 0;
             end
         end else begin
-            if (~r_txen && ~r_rxen) begin
-                #100 r_rxen = 1;
+            if (~r_txen && ~w_rxen) begin
+                // #100 r_rxen = 1;
+                #100 r_dll_en = 1;
             end
         end
     end
 
+    mac_tx mac_tx(clock, r_dll_en, r_dll_d, w_rx_ready, w_rxen, w_rxd);
+
     always @(posedge clock) begin
-        if (in_rxen) begin
-            r_rxd = r_input_data[(9-r_offset) * 8 +: 8];
+        if (r_dll_en && w_rx_ready) begin
+            r_dll_d = r_input_data[(9-r_offset) * 8 +: 8];
             r_offset += 1;
-            $display("Packet from wire is %h", r_rxd);
+            $display("Packet from wire is %h", r_dll_d);
             if (r_offset >= 9)
-                #100 r_rxen = 0;
+                #100 r_dll_en = 0;
         end else begin
             if (~r_txen && r_offset >= 9)
-                #100 $finish;
+                #10000 $finish;
         end
     end
 
