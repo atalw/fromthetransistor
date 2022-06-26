@@ -14,21 +14,25 @@
 //
 // https://en.wikipedia.org/wiki/Medium_access_control
 module mac(
-    input   wire        in_txc,
-    input   wire        in_rxc,
-    input   wire        in_rxdv,
-    input   wire [7:0]  in_rxd,
-    input   wire        in_rxer,
-    output  wire        out_txen,
-    output  wire [7:0]  out_txd
-);
+    input   wire        in_txc,         // transmit clock (higher layer to mac)
+    input   wire        in_txen,        // higher layer to mac transmit enable
+    input   wire [7:0]  in_txd,         // higher layer to mac transmit data
+    input   wire        in_rxc,         // receive clock (mii/phy to mac)
+    input   wire        in_rxdv,        // mii/phy to mac receive data valid
+    input   wire [7:0]  in_rxd,         // mii/phy to mac receive data
+    input   wire        in_rxer,        // mii/phy to mac receive err
+    input   wire        in_crs,         // mii/phy to mac carrier sense
+    output  wire        out_tx_ready,   // mac to higher layer signalling payload can be received
+    output  wire        out_txen,       // mac to mii/phy transmit enable
+    output  wire [7:0]  out_txd         // mac to mii/phy transmit data
+    );
 
-    wire w_dest_mac;
-    wire w_src_mac;
-    wire w_ether_type;
-    wire w_eth_frame;
+    // When data is received from the from the MII(PHY), we need to deconstruct the frame into it's
+    // constituents for the MII to pass it forward to the data-link layer of the OSI model.
+    mac_rx mac_rx(in_rxc, in_rxdv, in_rxd, in_rxer, in_crs, out_txen, out_txd);
 
-    transmitter transmitter(in_txc, w_dest_mac, w_src_mac, w_ether_type, in_rxd, in_rxdv, out_txen, out_txd);
+    // When data is received from the data-link layer of the OSI, we need to construct an ethernet
+    // frame and pass it to the MII so that it can forward it to the PHY.
+    mac_tx mac_tx(in_txc, in_txen, in_txd, out_tx_ready, out_txen, out_txd);
 
-    receiver receiver(in_rxc, in_rxdv, in_rxd, rxc);
 endmodule

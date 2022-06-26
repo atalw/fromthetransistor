@@ -12,16 +12,24 @@
 //
 // https://en.wikipedia.org/wiki/Physical_layer#PHY
 module phy(
-    input   wire        in_txen,
-    input   wire [7:0]  in_txd,
-    output  wire        out_txc
-    output  wire        out_rxc,
-    output  wire        out_rxdv,
-    output  wire [7:0]  out_rxd,
-    output  wire        out_rxer
+    input   wire        in_txen,    // mii/mac to phy transmit enable
+    input   wire [7:0]  in_txd,     // mii/mac to phy transmit data
+    input   wire        in_rxen,    // wire to phy receive enable
+    input   wire [7:0]  in_rxd,     // wire to phy receive data
+    output  wire        out_txc,    // transmit clock (phy to mii/mac)
+    output  wire        out_txen,   // phy to wire transmit enable
+    output  wire [7:0]  out_txd,    // phy to wire transmit data
+    output  wire        out_rxc,    // receive clock (phy to mac/mii)
+    output  wire        out_rxdv,   // phy to mii/mac receive data valid
+    output  wire [7:0]  out_rxd,    // phy to mii/mac receive data
+    output  wire        out_rxer,   // phy to mii/mac receiver err
+    output  wire        out_crs,    // phy to mii/mac carrier sense
     );
 
-    // transmitter transmitter(txc, w_dest_mac, w_src_mac, w_ether_type, w_eth_frame, w_txen, w_txd);
+    // Receive data from analog wire and output to mii
+    phy_rx phy_rx(in_rxen, in_rxd, out_rxc, out_rxdv, out_rxd, our_rxer, out_crs);
 
-    // receiver receiver(txc, w_txen, w_txd, rxc);
+    // Transmit data from Mii to analog wire
+    phy_tx phy_tx(in_txen, in_txd, out_txc, out_txen, out_txd);
+
 endmodule

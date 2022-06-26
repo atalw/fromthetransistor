@@ -1,12 +1,13 @@
-module receiver(
-    input           in_clk,
-    input           in_txen,    // transmit enable
-    input [7:0]     in_txd,     // transmit data
-
-    output          out_rxc,    // receive clock
-    output          out_rxdv,   // receive data valid
-    output [7:0]    out_rxd,    // receive data
-    output          out_rxer,   // receive error
+// When data is received from the from the PHY, we need to deconstruct the frame into it's 
+// constituents for the MII to pass it forward
+module mac_rx(
+    input  wire          in_rxc,
+    input  wire          in_rxdv,    // receive data valid
+    input  wire [7:0]    in_rxd,     // receive data
+    input  wire          in_rxer,    // receive error
+    input  wire          in_crs,    // carrier sense
+    output wire          out_txen,   // transmit enable
+    output wire [7:0]    out_txd,    // transmit data
     );
 
 
@@ -15,13 +16,14 @@ module receiver(
     reg [47:0]              r_dest_mac;
     reg [47:0]              r_src_mac;
     reg [15:0]              r_ether_type;
-    reg [1500*8-1:0]        r_payload;    // min is 46 octets and max is 1500 octets
+    reg [7:0]               r_payload;    // min is 46 octets and max is 1500 octets
     reg [31:0]              r_fcs;        // frame check sequence
     reg [95:0]              r_igp;        // inter packet gap
     reg [3:0]               r_stage;
     reg [7:0]               r_data;
     reg [11:0]              r_offset;
 
+    `define IDLE            4'd0
     `define PREAMBLE        4'd1
     `define SFD             4'd2
     `define MACDEST         4'd3
@@ -32,21 +34,27 @@ module receiver(
     `define IGP             4'd8
 
     initial begin
-        r_stage = 4'd0;
+        r_stage = `IDLE;
         r_offset = 12'd0;
     end
 
 
-    always @(posedge in_clk) begin
-        if (in_txen) begin
-            if (r_stage == 4'd0)
+    always @(posedge in_rxc) begin
+        if (in_crs) begin
+            if (r_stage == `IDLE)
                 r_stage = `PREAMBLE;
 
             case (r_stage)
+                `IDLE: begin
+                    out_txen = 1'b0;
+                    r_offset = 12'd0;
+                end
+
                 `PREAMBLE: begin
-                    r_preamble[(7-offset)*8 +: 8] = in_txd;
+                    out_txen = 1'b0;
+                    r_preamble[(6-offset)*8 +: 8] = in_txd;
                     offset += 12'd1;
-                    if (offset == 12'd8) begin
+                    if (offset == 12'd7) begin
                         if (r_preamble != 56'b10101010_10101010_10101010_10101010_10101010_10101010_10101010)
                             $finish;
                         offset = 12'd0;
@@ -55,6 +63,7 @@ module receiver(
                 end
 
                 `SFD: begin
+                    out_txen = 1'b0;
                     r_sfd = in_txd;
                     offset += 12'd1;
                     if (offset == 1) begin
@@ -64,6 +73,7 @@ module receiver(
                 end
 
                 `MACDEST: begin
+                    out_txen = 1'b0;
                     r_dest_mac[(5-offset)*8 +: 8] = in_txd;
                     offset += 12'd1;
                     if (offset == 12'd6) begin
@@ -73,6 +83,7 @@ module receiver(
                 end
 
                 `MACSRC: begin
+                    out_txen = 1'b0;
                     r_src_mac[(5-offset)*8 +: 8] = in_txd;
                     offset += 12'd1;
                     if (offset == 12'd6) begin
@@ -82,6 +93,7 @@ module receiver(
                 end
 
                 `ETHERTYPE: begin
+                    out_txen = 1'b1;
                     r_ether_type[(1-offset)*8 +: 8] = in_txd;
                     offset += 12'd1;
                     if (offset == 12'd2) begin
@@ -99,7 +111,7 @@ module receiver(
             endcase
 
         end else begin
-            r_stage = 4'd0;
+            r_stage = `IDLE;
             r_offset = 12'd0;
         end
     end

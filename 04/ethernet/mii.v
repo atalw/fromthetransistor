@@ -24,10 +24,36 @@ module mii;
     wire        w_rxdv;     // receive data valid
     wire [7:0]  w_rxd;      // receive data
     wire        w_rxer;     // receive error
+    wire        w_crs;      // carrier sense
 
 
-    mac mac(w_txc, w_rxc, w_rxdv, w_rxd, w_rxer, w_txen, w_txd);
+    mac mac(
+        .in_txc(w_txc),
+        .in_txen(),         // Leave empty since it is input from higher layer to the MAC
+        .in_txd(),          // Leave empty since it is input from higher layer to the MAC
+        .in_rxc(w_rxc),
+        .in_rxdv(w_rxdv),
+        .in_rxd(w_rxd),
+        .in_rxer(w_rxer),
+        .in_crs(w_crs),
+        .out_tx_ready(),    // Leave empty since it is output from MAC to higher layer
+        .out_txen(w_txen),
+        .out_txd(w_txd)
+    );
 
-    phy phy(w_txen, w_txd, w_txc, w_rxc, w_rxdv, w_rxd, w_rxer);
+    phy phy(
+        .in_txen(w_txen),
+        .in_txd(w_txd),
+        .in_rxen(),         // Leave empty since (wire to phy) is not handled in MII
+        .in_rxd(),          // Leave empty since (wire to phy) is not handled in MII
+        .out_txc(w_txc),
+        .out_txen(),        // Leave empty since (phy to wire) is not handled in MII
+        .out_txd(),         // Leave empty since (phy to wire) is not handled in MII
+        .out_rxc(w_rxc),
+        .out_rxdv(w_rxdv),
+        .out_rxd(w_rxd),
+        .out_rxer(w_rxer),
+        .out_crs(w_crs)
+    );
 
 endmodule
