@@ -5,12 +5,14 @@ module mac_rx(
     input  wire          in_rxdv,    // receive data valid
     input  wire [7:0]    in_rxd,     // receive data
     input  wire          in_rxer,    // receive error
-    input  wire          in_crs,    // carrier sense
+    input  wire          in_crs,     // carrier sense
     output wire          out_txen,   // transmit enable
-    output wire [7:0]    out_txd,    // transmit data
+    output wire [7:0]    out_txd     // transmit data
     );
 
 
+    reg                     r_txen;
+    reg                     r_txd;
     reg [55:0]              r_preamble;
     reg [7:0]               r_sfd;        // start frame delimiter
     reg [47:0]              r_dest_mac;
@@ -38,6 +40,8 @@ module mac_rx(
         r_offset = 12'd0;
     end
 
+    assign out_txen = r_txen;
+    assign out_txd = r_txd;
 
     always @(posedge in_rxc) begin
         if (in_crs) begin
@@ -46,58 +50,58 @@ module mac_rx(
 
             case (r_stage)
                 `IDLE: begin
-                    out_txen = 1'b0;
+                    r_txen = 1'b0;
                     r_offset = 12'd0;
                 end
 
                 `PREAMBLE: begin
-                    out_txen = 1'b0;
-                    r_preamble[(6-offset)*8 +: 8] = in_txd;
-                    offset += 12'd1;
-                    if (offset == 12'd7) begin
+                    r_txen = 1'b0;
+                    r_preamble[(6-r_offset)*8 +: 8] = in_rxd;
+                    r_offset += 12'd1;
+                    if (r_offset == 12'd7) begin
                         if (r_preamble != 56'b10101010_10101010_10101010_10101010_10101010_10101010_10101010)
                             $finish;
-                        offset = 12'd0;
+                        r_offset = 12'd0;
                         r_stage = `SFD;
                     end
                 end
 
                 `SFD: begin
-                    out_txen = 1'b0;
-                    r_sfd = in_txd;
-                    offset += 12'd1;
-                    if (offset == 1) begin
-                        offset = 12'd0;
+                    r_txen = 1'b0;
+                    r_sfd = in_rxd;
+                    r_offset += 12'd1;
+                    if (r_offset == 1) begin
+                        r_offset = 12'd0;
                         r_stage = `MACDEST;
                     end
                 end
 
                 `MACDEST: begin
-                    out_txen = 1'b0;
-                    r_dest_mac[(5-offset)*8 +: 8] = in_txd;
-                    offset += 12'd1;
-                    if (offset == 12'd6) begin
-                        offset = 12'd0;
+                    r_txen = 1'b0;
+                    r_dest_mac[(5-r_offset)*8 +: 8] = in_rxd;
+                    r_offset += 12'd1;
+                    if (r_offset == 12'd6) begin
+                        r_offset = 12'd0;
                         r_stage = `MACSRC;
                     end
                 end
 
                 `MACSRC: begin
-                    out_txen = 1'b0;
-                    r_src_mac[(5-offset)*8 +: 8] = in_txd;
-                    offset += 12'd1;
-                    if (offset == 12'd6) begin
-                        offset = 12'd0;
+                    r_txen = 1'b0;
+                    r_src_mac[(5-r_offset)*8 +: 8] = in_rxd;
+                    r_offset += 12'd1;
+                    if (r_offset == 12'd6) begin
+                        r_offset = 12'd0;
                         r_stage = `ETHERTYPE;
                     end
                 end
 
                 `ETHERTYPE: begin
-                    out_txen = 1'b1;
-                    r_ether_type[(1-offset)*8 +: 8] = in_txd;
-                    offset += 12'd1;
-                    if (offset == 12'd2) begin
-                        offset = 12'd0;
+                    r_txen = 1'b1;
+                    r_ether_type[(1-r_offset)*8 +: 8] = in_rxd;
+                    r_offset += 12'd1;
+                    if (r_offset == 12'd2) begin
+                        r_offset = 12'd0;
                         r_stage = `PAYLOAD;
                     end
                 end

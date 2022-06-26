@@ -34,7 +34,7 @@ module mac_tx(
     `define FCS             4'd7
     `define IPG             4'd8
 
-    assing out_tx_ready = r_tx_ready;
+    assign out_tx_ready = r_tx_ready;
     assign out_txen = r_txen;
     assign out_txd = r_txd;
 
@@ -111,8 +111,8 @@ module mac_tx(
                 `PAYLOAD: begin
                     r_txen = 1;
                     r_tx_ready = 1;
-                    if (in_frame_en) begin
-                        r_data = in_eth_frame;
+                    if (in_txd) begin
+                        r_data = in_txd;
                     end else begin
                         r_stage = `IPG;
                     end

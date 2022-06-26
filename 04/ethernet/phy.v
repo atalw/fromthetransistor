@@ -1,3 +1,6 @@
+`include "phy_tx.v"
+`include "phy_rx.v"
+
 // The Ethernet PHY is a component that operates at the physical layer of the OSI network model.
 // It implements the physical layer portion of the Ethernet. Its purpose is to provide analog signal
 // physical access to the link. It is usually interfaced with a media-independent interface (MII)
@@ -23,7 +26,7 @@ module phy(
     output  wire        out_rxdv,   // phy to mii/mac receive data valid
     output  wire [7:0]  out_rxd,    // phy to mii/mac receive data
     output  wire        out_rxer,   // phy to mii/mac receiver err
-    output  wire        out_crs,    // phy to mii/mac carrier sense
+    output  wire        out_crs     // phy to mii/mac carrier sense
     );
 
     // Receive data from analog wire and output to mii

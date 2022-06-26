@@ -1,3 +1,6 @@
+`include "mac.v"
+`include "phy.v"
+
 // Encapsulates: Data-link layer <-> MAC <-> MII <-> PHY <-> Wire
 // Inputs/Outputs:
 // - Higher layer
@@ -9,7 +12,7 @@ module eth_controller(
     input   wire [7:0]    in_rxd,       // wire receive data
     output  wire          out_tx_ready, // mcu/cpu transmit ready (1 after preamble etc has been sent)
     output  wire          out_wire_txen,// phy to wire transmit enable
-    output  wire [7:0]    out_wire_txd, // phy to wire transmit data
+    output  wire [7:0]    out_wire_txd  // phy to wire transmit data
     );
 
     // We've included the MII in this module itself. It is essentially common wires between the MAC

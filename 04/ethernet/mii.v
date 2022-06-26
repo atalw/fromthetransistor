@@ -1,3 +1,6 @@
+`include "mac.v"
+`include "phy.v"
+
 // The media-independent interface (MII) is a standard interface to connect a Ethernet media access 
 // control (MAC) block to a PHY chip.
 // The original MII transfers network data using 4-bit nibbles in each direction (4 transmit data 

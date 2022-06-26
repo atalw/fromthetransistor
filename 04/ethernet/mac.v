@@ -1,3 +1,6 @@
+`include "mac_rx.v"
+`include "mac_tx.v"
+
 // The MAC sublayer provides a control abstraction of the physical layer such that the complexities
 // of physical link control are invisible to the LLC and upper layers of the network stack. Thus any
 // LLC sublayer (and higher layers) may be used with any MAC. In turn, the medium access control block
