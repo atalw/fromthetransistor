@@ -26,6 +26,14 @@ module mii;
     wire        w_rxer;     // receive error
     wire        w_crs;      // carrier sense
 
+    // Not entirely sure if the modules get made anew in this case. In the
+    // eth_controller we've instantiated the mac and phy modules so that we
+    // can connect them to the mcu/cpu and the wire. The purpose of the mii is
+    // to connect the mac with the phy. We could just specify the common wires
+    // in eth_controller and connect them there, but I didn't want to do that
+    // since the concept of mii would not be clearly visible. I did it anyway
+    // since reinstantiating mac and phy seemed incorrect. So, as a result,
+    // this module is not being used.
 
     mac mac(
         .in_txc(w_txc),
