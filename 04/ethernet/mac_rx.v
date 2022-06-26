@@ -20,7 +20,7 @@ module mac_rx(
     reg [15:0]              r_ether_type;
     reg [7:0]               r_payload;    // min is 46 octets and max is 1500 octets
     reg [31:0]              r_fcs;        // frame check sequence
-    reg [95:0]              r_igp;        // inter packet gap
+    reg [95:0]              r_ipg;        // inter packet gap
     reg [3:0]               r_stage;
     reg [7:0]               r_data;
     reg [11:0]              r_offset;
@@ -108,12 +108,23 @@ module mac_rx(
 
                 `PAYLOAD: begin
                     r_txen = 1'b1;
+                    // We tell the end of the frame either by carrier signal loss or IPG transmission (96 0 bits)
                     r_txd = in_rxd;
+                    r_ipg[(11-r_offset)*8 +: 8] = in_rxd;
+                    r_offset += 1;
+                    if (r_offset >= 11 && r_ipg == 96'd0) begin // or end of frame char
+                        r_stage = `IPG;
+                    end else if (r_offset >= 11) begin
+                        r_offset -= 1;
+                        r_ipg = {r_ipg[87:0], 8'h11};
+                    end
                 end
 
                 `IPG: begin
-                    $display("should never be here");
-                    $finish;
+                    // 96-bit idle time between packets for reset have been received
+                    r_stage = `IDLE;
+                    r_offset = 12'd0;
+                    r_ipg = 96'd1;
                 end
             endcase
         end else begin

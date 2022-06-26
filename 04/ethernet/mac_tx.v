@@ -13,7 +13,7 @@ module mac_tx(
     reg                     r_tx_ready;     // 1 when we're sending payload, 0 in all other cases
     reg                     r_txen;
     reg [7:0]               r_txd;
-    reg [55:0]              r_preamble = 56'b10101010_10101010_10101010_10101010_10101010_10101010_10101010;
+    reg [55:0]              r_preamble;
     reg [7:0]               r_sfd;        // start frame delimiter
     reg [47:0]              r_dest_mac;
     reg [47:0]              r_src_mac;
@@ -47,7 +47,7 @@ module mac_tx(
         r_dest_mac <= 48'd0; // TODO
         r_src_mac <= 48'd0; // TODO
         r_ether_type <= 16'd0; // TODO
-        // r_preamble <= 56'b10101010_10101010_10101010_10101010_10101010_10101010_10101010;
+        r_preamble <= 56'b10101010_10101010_10101010_10101010_10101010_10101010_10101010;
         r_sfd <= 8'b10101011;
         r_ipg <= 96'd0;
         r_stage <= 4'd0;
@@ -152,9 +152,4 @@ module mac_tx(
             endcase
         end
     end
-
-    // always @(posedge in_clk) begin
-    //     r_txd <= r_data;
-    // end
-
 endmodule

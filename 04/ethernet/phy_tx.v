@@ -23,5 +23,4 @@ module phy_tx(
         r_txen <= in_txen;
         r_txd <= in_txd;
     end
-
 endmodule

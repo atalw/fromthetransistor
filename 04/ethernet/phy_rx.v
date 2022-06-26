@@ -34,7 +34,4 @@ module phy_rx(
         r_rxd <= in_rxd;
         r_crs <= in_rxen;
     end
-
-
-
 endmodule
