@@ -1,0 +1,642 @@
+$date
+	Sun Jun 26 19:37:55 2022
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module mac_rx $end
+$var wire 1 ! in_crs $end
+$var wire 1 " in_rxc $end
+$var wire 8 # in_rxd [7:0] $end
+$var wire 1 $ in_rxdv $end
+$var wire 1 % in_rxer $end
+$var wire 1 & out_txen $end
+$var wire 8 ' out_txd [7:0] $end
+$var reg 48 ( r_dest_mac [47:0] $end
+$var reg 16 ) r_ether_type [15:0] $end
+$var reg 12 * r_offset [11:0] $end
+$var reg 56 + r_preamble [55:0] $end
+$var reg 8 , r_sfd [7:0] $end
+$var reg 48 - r_src_mac [47:0] $end
+$var reg 4 . r_stage [3:0] $end
+$var reg 1 / r_txd $end
+$var reg 1 0 r_txen $end
+$upscope $end
+$scope module tb $end
+$var wire 8 1 in_rxd [7:0] $end
+$var wire 1 2 in_rxen $end
+$var wire 8 3 in_txd [7:0] $end
+$var wire 1 4 in_txen $end
+$var wire 1 5 out_wire_txen $end
+$var wire 8 6 out_wire_txd [7:0] $end
+$var wire 1 7 out_tx_ready $end
+$var reg 1 8 clock $end
+$var reg 160 9 r_input_data [159:0] $end
+$var reg 24 : r_offset [23:0] $end
+$var reg 8 ; r_txd [7:0] $end
+$var reg 1 < r_txen $end
+$scope module eth_controller $end
+$var wire 8 = in_rxd [7:0] $end
+$var wire 1 2 in_rxen $end
+$var wire 8 > in_txd [7:0] $end
+$var wire 1 4 in_txen $end
+$var wire 1 ? w_crs $end
+$var wire 1 @ w_rxc $end
+$var wire 8 A w_rxd [7:0] $end
+$var wire 1 B w_rxdv $end
+$var wire 1 C w_rxer $end
+$var wire 1 D w_txen $end
+$var wire 8 E w_txd [7:0] $end
+$var wire 1 F w_txc $end
+$var wire 1 5 out_wire_txen $end
+$var wire 8 G out_wire_txd [7:0] $end
+$var wire 1 7 out_tx_ready $end
+$scope module mac $end
+$var wire 1 ? in_crs $end
+$var wire 1 @ in_rxc $end
+$var wire 8 H in_rxd [7:0] $end
+$var wire 1 B in_rxdv $end
+$var wire 1 C in_rxer $end
+$var wire 8 I in_txd [7:0] $end
+$var wire 1 4 in_txen $end
+$var wire 1 D out_txen $end
+$var wire 8 J out_txd [7:0] $end
+$var wire 1 7 out_tx_ready $end
+$var wire 1 F in_txc $end
+$scope module mac_tx $end
+$var wire 8 K in_txd [7:0] $end
+$var wire 1 4 in_txen $end
+$var wire 1 7 out_tx_ready $end
+$var wire 8 L out_txd [7:0] $end
+$var wire 1 D out_txen $end
+$var wire 1 F in_clk $end
+$var reg 8 M r_data [7:0] $end
+$var reg 48 N r_dest_mac [47:0] $end
+$var reg 16 O r_ether_type [15:0] $end
+$var reg 96 P r_ipg [95:0] $end
+$var reg 24 Q r_offset [23:0] $end
+$var reg 56 R r_preamble [55:0] $end
+$var reg 8 S r_sfd [7:0] $end
+$var reg 48 T r_src_mac [47:0] $end
+$var reg 4 U r_stage [3:0] $end
+$var reg 1 V r_tx_ready $end
+$var reg 1 W r_txen $end
+$upscope $end
+$upscope $end
+$scope module phy $end
+$var wire 8 X in_rxd [7:0] $end
+$var wire 1 2 in_rxen $end
+$var wire 8 Y in_txd [7:0] $end
+$var wire 1 D in_txen $end
+$var wire 1 Z our_rxer $end
+$var wire 1 ? out_crs $end
+$var wire 1 @ out_rxc $end
+$var wire 8 [ out_rxd [7:0] $end
+$var wire 1 B out_rxdv $end
+$var wire 1 C out_rxer $end
+$var wire 1 5 out_txen $end
+$var wire 8 \ out_txd [7:0] $end
+$var wire 1 F out_txc $end
+$scope module phy_rx $end
+$var wire 8 ] in_rxd [7:0] $end
+$var wire 1 2 in_rxen $end
+$var wire 1 ? out_crs $end
+$var wire 1 @ out_rxc $end
+$var wire 8 ^ out_rxd [7:0] $end
+$var wire 1 B out_rxdv $end
+$var wire 1 Z out_rxer $end
+$upscope $end
+$scope module phy_tx $end
+$var wire 8 _ in_txd [7:0] $end
+$var wire 1 D in_txen $end
+$var wire 1 F out_txc $end
+$var wire 8 ` out_txd [7:0] $end
+$var wire 1 5 out_txen $end
+$var reg 1 a clock $end
+$var reg 8 b r_txd [7:0] $end
+$var reg 1 c r_txen $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+xc
+bx b
+0a
+bx `
+b0 _
+bz ^
+bz ]
+bx \
+bz [
+zZ
+b0 Y
+bz X
+0W
+1V
+b0 U
+b0 T
+b10101011 S
+b10101010101010101010101010101010101010101010101010101010 R
+b0 Q
+b0 P
+b0 O
+b0 N
+b0 M
+b0 L
+bx K
+b0 J
+bx I
+bz H
+bx G
+0F
+b0 E
+0D
+zC
+zB
+bz A
+z@
+z?
+bx >
+bz =
+0<
+bx ;
+b0 :
+b1000000100000001100000100000001010000011000000111000010000000100100001010000010110000110000001101000011100000111100010000000100010001001000010011 9
+08
+17
+bx 6
+x5
+04
+bx 3
+z2
+bz 1
+x0
+x/
+b0 .
+bx -
+bx ,
+bx +
+b0 *
+bx )
+bx (
+b0x '
+x&
+z%
+z$
+bz #
+z"
+z!
+$end
+#10
+b0 6
+b0 G
+b0 \
+b0 `
+b0 b
+05
+0c
+b1 :
+b0 3
+b0 >
+b0 I
+b0 K
+b0 ;
+14
+1<
+18
+1F
+1a
+#20
+08
+0F
+0a
+#30
+b10101010 E
+b10101010 J
+b10101010 L
+b10101010 Y
+b10101010 _
+b10101010 M
+07
+0V
+1D
+1W
+b10 :
+b1 3
+b1 >
+b1 I
+b1 K
+b1 ;
+b1 Q
+b1 U
+18
+1F
+1a
+#40
+b10101010 6
+b10101010 G
+b10101010 \
+b10101010 `
+b10101010 b
+15
+1c
+08
+0F
+0a
+#50
+b10 Q
+18
+1F
+1a
+#60
+08
+0F
+0a
+#70
+b11 Q
+18
+1F
+1a
+#80
+08
+0F
+0a
+#90
+b100 Q
+18
+1F
+1a
+#100
+08
+0F
+0a
+#110
+b101 Q
+18
+1F
+1a
+#120
+08
+0F
+0a
+#130
+b110 Q
+18
+1F
+1a
+#140
+08
+0F
+0a
+#150
+b10 U
+b0 Q
+18
+1F
+1a
+#160
+08
+0F
+0a
+#170
+b11 U
+b10101011 E
+b10101011 J
+b10101011 L
+b10101011 Y
+b10101011 _
+b10101011 M
+18
+1F
+1a
+#180
+b10101011 6
+b10101011 G
+b10101011 \
+b10101011 `
+b10101011 b
+08
+0F
+0a
+#190
+b0 E
+b0 J
+b0 L
+b0 Y
+b0 _
+b0 M
+b1 Q
+18
+1F
+1a
+#200
+b0 6
+b0 G
+b0 \
+b0 `
+b0 b
+08
+0F
+0a
+#210
+b10 Q
+18
+1F
+1a
+#220
+08
+0F
+0a
+#230
+b11 Q
+18
+1F
+1a
+#240
+08
+0F
+0a
+#250
+b100 Q
+18
+1F
+1a
+#260
+08
+0F
+0a
+#270
+b101 Q
+18
+1F
+1a
+#280
+08
+0F
+0a
+#290
+b100 U
+b0 Q
+18
+1F
+1a
+#300
+08
+0F
+0a
+#310
+b1 Q
+18
+1F
+1a
+#320
+08
+0F
+0a
+#330
+b10 Q
+18
+1F
+1a
+#340
+08
+0F
+0a
+#350
+b11 Q
+18
+1F
+1a
+#360
+08
+0F
+0a
+#370
+b100 Q
+18
+1F
+1a
+#380
+08
+0F
+0a
+#390
+b101 Q
+18
+1F
+1a
+#400
+08
+0F
+0a
+#410
+b101 U
+b0 Q
+18
+1F
+1a
+#420
+08
+0F
+0a
+#430
+b1 Q
+18
+1F
+1a
+#440
+08
+0F
+0a
+#450
+b110 U
+b0 Q
+18
+1F
+1a
+#460
+08
+0F
+0a
+#470
+b1 E
+b1 J
+b1 L
+b1 Y
+b1 _
+b1 M
+17
+1V
+18
+1F
+1a
+#480
+b1 6
+b1 G
+b1 \
+b1 `
+b1 b
+08
+0F
+0a
+#490
+b11 :
+b10 3
+b10 >
+b10 I
+b10 K
+b10 ;
+18
+1F
+1a
+#500
+08
+0F
+0a
+#510
+b10 E
+b10 J
+b10 L
+b10 Y
+b10 _
+b10 M
+b100 :
+b11 3
+b11 >
+b11 I
+b11 K
+b11 ;
+18
+1F
+1a
+#520
+b10 6
+b10 G
+b10 \
+b10 `
+b10 b
+08
+0F
+0a
+#530
+b11 E
+b11 J
+b11 L
+b11 Y
+b11 _
+b11 M
+b101 :
+b100 3
+b100 >
+b100 I
+b100 K
+b100 ;
+18
+1F
+1a
+#540
+b11 6
+b11 G
+b11 \
+b11 `
+b11 b
+08
+0F
+0a
+#550
+b100 E
+b100 J
+b100 L
+b100 Y
+b100 _
+b100 M
+b110 :
+b101 3
+b101 >
+b101 I
+b101 K
+b101 ;
+18
+1F
+1a
+#560
+b100 6
+b100 G
+b100 \
+b100 `
+b100 b
+08
+0F
+0a
+#570
+b101 E
+b101 J
+b101 L
+b101 Y
+b101 _
+b101 M
+b111 :
+b110 3
+b110 >
+b110 I
+b110 K
+b110 ;
+18
+1F
+1a
+#580
+b101 6
+b101 G
+b101 \
+b101 `
+b101 b
+08
+0F
+0a
+#590
+b110 E
+b110 J
+b110 L
+b110 Y
+b110 _
+b110 M
+b1000 :
+b111 3
+b111 >
+b111 I
+b111 K
+b111 ;
+18
+1F
+1a
+#600
+b110 6
+b110 G
+b110 \
+b110 `
+b110 b
+08
+0F
+0a
+#610
+b111 E
+b111 J
+b111 L
+b111 Y
+b111 _
+b111 M
+b1001 :
+b1000 3
+b1000 >
+b1000 I
+b1000 K
+b1000 ;
+18
+1F
+1a

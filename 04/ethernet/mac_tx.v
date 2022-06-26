@@ -2,18 +2,18 @@
 // an ethernet frame and transmits it to the MII which then passes it on to
 // the PHY.
 module mac_tx(
-    input                   in_clk,
-    input                   in_txen,
-    input [7:0]             in_txd,
-    output                  out_tx_ready,   // tell the higher layer to send or stop sending data
-    output                  out_txen,
-    output [7:0]            out_txd
-);
+    input   wire            in_clk,
+    input   wire            in_txen,
+    input   wire [7:0]      in_txd,
+    output  wire            out_tx_ready,   // tell the higher layer to send or stop sending data
+    output  wire            out_txen,
+    output  wire [7:0]      out_txd
+    );
 
     reg                     r_tx_ready;     // 1 when we're sending payload, 0 in all other cases
     reg                     r_txen;
     reg [7:0]               r_txd;
-    reg [55:0]              r_preamble;
+    reg [55:0]              r_preamble = 56'b10101010_10101010_10101010_10101010_10101010_10101010_10101010;
     reg [7:0]               r_sfd;        // start frame delimiter
     reg [47:0]              r_dest_mac;
     reg [47:0]              r_src_mac;
@@ -23,6 +23,7 @@ module mac_tx(
     reg [95:0]              r_ipg;        // inter packet gap
     reg [3:0]               r_stage;
     reg [7:0]               r_data;
+    reg [23:0]              r_offset;
 
     `define IDLE            4'd0
     `define PREAMBLE        4'd1
@@ -36,18 +37,21 @@ module mac_tx(
 
     assign out_tx_ready = r_tx_ready;
     assign out_txen = r_txen;
-    assign out_txd = r_txd;
+    assign out_txd = r_data;
 
     initial begin
+        r_data <= 8'd0;
+        r_data[0] <= 0;
         r_txen = 0;
         r_tx_ready = 1;
         r_dest_mac <= 48'd0; // TODO
         r_src_mac <= 48'd0; // TODO
         r_ether_type <= 16'd0; // TODO
-        r_preamble <= 56'b10101010_10101010_10101010_10101010_10101010_10101010_10101010;
+        // r_preamble <= 56'b10101010_10101010_10101010_10101010_10101010_10101010_10101010;
         r_sfd <= 8'b10101011;
         r_ipg <= 96'd0;
         r_stage <= 4'd0;
+        r_offset <= 0;
     end
 
     always @(posedge in_clk) begin
@@ -57,95 +61,100 @@ module mac_tx(
 
             case (r_stage)
                 `PREAMBLE: begin
-                    r_txen = 1;
-                    r_tx_ready = 0;
-                    r_data = r_preamble[6*8 +: 8];
-                    r_data = r_preamble[5*8 +: 8];
-                    r_data = r_preamble[4*8 +: 8];
-                    r_data = r_preamble[3*8 +: 8];
-                    r_data = r_preamble[2*8 +: 8];
-                    r_data = r_preamble[1*8 +: 8];
-                    r_data = r_preamble[0*8 +: 8];
-                    r_stage = `SFD;
-                end
-
-                `SFD: begin
-                    r_txen = 1;
-                    r_tx_ready = 0;
-                    r_data = r_sfd;
-                    r_stage = `MACDEST;
-                end
-
-                `MACDEST: begin
-                    r_txen = 1;
-                    r_tx_ready = 0;
-                    r_data = r_dest_mac[5*8 +: 8];
-                    r_data = r_dest_mac[4*8 +: 8];
-                    r_data = r_dest_mac[3*8 +: 8];
-                    r_data = r_dest_mac[2*8 +: 8];
-                    r_data = r_dest_mac[1*8 +: 8];
-                    r_data = r_dest_mac[0*8 +: 8];
-                    r_stage = `MACSRC;
-                end
-
-                `MACSRC: begin
-                    r_txen = 1;
-                    r_tx_ready = 0;
-                    r_data = r_src_mac[5*8 +: 8];
-                    r_data = r_src_mac[4*8 +: 8];
-                    r_data = r_src_mac[3*8 +: 8];
-                    r_data = r_src_mac[2*8 +: 8];
-                    r_data = r_src_mac[1*8 +: 8];
-                    r_data = r_src_mac[0*8 +: 8];
-                    r_stage = `ETHERTYPE;
-                end
-
-                `ETHERTYPE: begin
-                    r_txen = 1;
-                    r_tx_ready = 0;
-                    r_data = r_ether_type[1*8 +: 8];
-                    r_data = r_ether_type[0*8 +: 8];
-                    r_stage = `PAYLOAD;
-                end
-
-                `PAYLOAD: begin
-                    r_txen = 1;
-                    r_tx_ready = 1;
-                    if (in_txd) begin
-                        r_data = in_txd;
-                    end else begin
-                        r_stage = `IPG;
+                    r_txen <= 1;
+                    r_tx_ready <= 0;
+                    // r_data = 8'd0;
+                    r_data <= r_preamble[(6-r_offset)*8 +: 8];
+                    $display("val is %b", r_preamble[(6-r_offset)*8 +: 8]);
+                    r_offset += 1;
+                    if (r_offset >= 7) begin
+                        r_offset <= 0;
+                        r_stage <= `SFD;
                     end
                 end
 
-                `IPG: begin
-                    r_txen = 1;
-                    r_tx_ready = 0;
-                    r_data = r_ipg[11*8 +: 8];
-                    r_data = r_ipg[10*8 +: 8];
-                    r_data = r_ipg[9*8 +: 8];
-                    r_data = r_ipg[7*8 +: 8];
-                    r_data = r_ipg[6*8 +: 8];
-                    r_data = r_ipg[5*8 +: 8];
-                    r_data = r_ipg[4*8 +: 8];
-                    r_data = r_ipg[3*8 +: 8];
-                    r_data = r_ipg[2*8 +: 8];
-                    r_data = r_ipg[1*8 +: 8];
-                    r_data = r_ipg[0*8 +: 8];
-                    r_data = 8'd0;
-                    r_txen = 0;
+                `SFD: begin
+                    r_txen <= 1;
+                    r_tx_ready <= 0;
+                    r_data <= r_sfd;
+                    r_stage <= `MACDEST;
+                end
+
+                `MACDEST: begin
+                    r_txen <= 1;
+                    r_tx_ready <= 0;
+                    r_data <= r_dest_mac[(5-r_offset)*8 +: 8];
+                    r_offset += 1;
+                    if (r_offset >= 6) begin
+                        r_offset <= 0;
+                        r_stage <= `MACSRC;
+                    end
+                end
+
+                `MACSRC: begin
+                    r_txen <= 1;
+                    r_tx_ready <= 0;
+                    r_data <= r_src_mac[(5-r_offset)*8 +: 8];
+                    r_offset += 1;
+                    if (r_offset >= 6) begin
+                        r_offset <= 0;
+                        r_stage <= `ETHERTYPE;
+                    end
+                end
+
+                `ETHERTYPE: begin
+                    r_txen <= 1;
+                    r_tx_ready <= 0;
+                    r_data <= r_ether_type[(1-r_offset)*8 +: 8];
+                    r_offset += 1;
+                    if (r_offset >= 2) begin
+                        r_offset <= 0;
+                        r_stage <= `PAYLOAD;
+                    end
+                end
+
+                `PAYLOAD: begin
+                    r_txen <= 1;
+                    r_tx_ready <= 1;
+                    r_data <= in_txd;
+                end
+
+                default: begin
+                    $finish;
                 end
             endcase
-        end else begin
-            r_stage = `IDLE;
-            r_txen = 0;
-            r_tx_ready = 1;
+        end else begin // in_txen = 0
+            case (r_stage)
+                // We've received a 0 for txen, which means the payload has ended.
+                `PAYLOAD: begin
+                    r_txen <= 1;
+                    r_tx_ready <= 1;
+                    r_stage <= `IPG;
+                end
+
+                `IPG: begin
+                    r_txen <= 1;
+                    r_tx_ready <= 0;
+                    r_data <= r_ipg[(11-r_offset)*8 +: 8];
+                    r_offset += 1;
+                    if (r_offset >= 12) begin
+                        r_data <= 8'd0;
+                        r_txen <= 0;
+                        r_stage <= `IDLE;
+                    end
+                end
+
+                default: begin
+                    r_stage <= `IDLE;
+                    r_txen <= 0;
+                    r_tx_ready <= 1;
+                end
+            endcase
         end
-
     end
 
-    always @(posedge in_clk) begin
-        r_txd <= r_data;
-    end
+    // always @(posedge in_clk) begin
+    //     r_txd <= r_data;
+    // end
 
 endmodule
