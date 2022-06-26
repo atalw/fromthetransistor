@@ -10,7 +10,30 @@ module phy_rx(
     output  wire        out_crs
     );
 
-    reg r_clk;
+    reg clock;
+    reg r_rxdv;
+    reg [7:0] r_rxd;
+    reg r_rxer;
+    reg r_crs;
+
+    assign out_rxc = clock;
+    assign out_rxdv = r_rxdv;
+    assign out_rxd = r_rxd;
+    assign out_rxer = r_rxer;
+    assign out_crs = r_crs;
+
+    initial begin
+        clock <= 0;
+        r_rxdv <= 1; // TODO
+        r_rxer <= 0; // TODO
+        r_crs <= 0;
+    end
+
+    always begin
+        #10 clock = ~clock;
+        r_rxd <= in_rxd;
+        r_crs <= in_rxen;
+    end
 
 
 

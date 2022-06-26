@@ -27,12 +27,14 @@ module mac(
     input   wire        in_crs,         // mii/phy to mac carrier sense
     output  wire        out_tx_ready,   // mac to higher layer signalling payload can be received
     output  wire        out_txen,       // mac to mii/phy transmit enable
-    output  wire [7:0]  out_txd         // mac to mii/phy transmit data
+    output  wire [7:0]  out_txd,        // mac to mii/phy transmit data
+    output  wire        out_rxen,       // mac to data-link layer receive enable
+    output  wire [7:0]  out_rxd         // mac to data-link layer receive data
     );
 
     // When data is received from the from the MII(PHY), we need to deconstruct the frame into it's
     // constituents for the MII to pass it forward to the data-link layer of the OSI model.
-    // mac_rx mac_rx(in_rxc, in_rxdv, in_rxd, in_rxer, in_crs, out_txen, out_txd);
+    mac_rx mac_rx(in_rxc, in_rxdv, in_rxd, in_rxer, in_crs, out_rxen, out_rxd);
 
     // When data is received from the data-link layer of the OSI, we need to construct an ethernet
     // frame and pass it to the MII so that it can forward it to the PHY.

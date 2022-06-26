@@ -6,11 +6,13 @@
 // - Higher layer
 // - Wire
 module eth_controller(
-    input   wire          in_txen,      // mcu/cpu transmit enable
-    input   wire [7:0]    in_txd,       // mcu/cpu transmit data
-    input   wire          in_rxen,      // wire receive enable
-    input   wire [7:0]    in_rxd,       // wire receive data
-    output  wire          out_tx_ready, // mcu/cpu transmit ready (1 after preamble etc has been sent)
+    input   wire          in_txen,      // mcu/cpu to mac transmit enable
+    input   wire [7:0]    in_txd,       // mcu/cpu to mac transmit data
+    input   wire          in_rxen,      // wire to phy receive enable
+    input   wire [7:0]    in_rxd,       // wire to phy receive data
+    output  wire          out_tx_ready, // mac to mcu/cpu transmit ready (1 after preamble etc has been sent)
+    output  wire          out_dll_rxen, // mac to data-link layer receive enable
+    output  wire [7:0]    out_dll_rxd,  // mac to data-link layer receive data
     output  wire          out_wire_txen,// phy to wire transmit enable
     output  wire [7:0]    out_wire_txd  // phy to wire transmit data
     );
@@ -56,7 +58,9 @@ module eth_controller(
         .in_crs(w_crs),
         .out_tx_ready(out_tx_ready),
         .out_txen(w_txen),
-        .out_txd(w_txd)
+        .out_txd(w_txd),
+        .out_rxen(out_dll_rxen),
+        .out_rxd(out_dll_rxd)
     );
 
     phy phy(

@@ -12,7 +12,7 @@ module mac_rx(
 
 
     reg                     r_txen;
-    reg                     r_txd;
+    reg [7:0]               r_txd;
     reg [55:0]              r_preamble;
     reg [7:0]               r_sfd;        // start frame delimiter
     reg [47:0]              r_dest_mac;
@@ -60,7 +60,7 @@ module mac_rx(
                     r_offset += 12'd1;
                     if (r_offset == 12'd7) begin
                         if (r_preamble != 56'b10101010_10101010_10101010_10101010_10101010_10101010_10101010)
-                            $finish;
+                            #10000 $finish;
                         r_offset = 12'd0;
                         r_stage = `SFD;
                     end
