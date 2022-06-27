@@ -65,7 +65,6 @@ module mac_tx(
                     r_tx_ready <= 0;
                     // r_data = 8'd0;
                     r_data <= r_preamble[(6-r_offset)*8 +: 8];
-                    $display("val is %b", r_preamble[(6-r_offset)*8 +: 8]);
                     r_offset += 1;
                     if (r_offset >= 7) begin
                         r_offset <= 0;
