@@ -1,5 +1,7 @@
 ## Ethernet controller
 
+This is an Ethernet controller built from a PHY, a MAC, and a MII.
+
 The Ethernet PHY is a component that operates at the physical layer of the OSI network model. 
 It implements the physical layer portion of the Ethernet. Its purpose is to provide analog signal 
 physical access to the link. It is usually interfaced with a media-independent interface (MII) to a 
@@ -15,6 +17,20 @@ into one chip or as separate chips.
 Systems communicating over Ethernet divide a stream of data into shorter pieces called frames. 
 Each frame contains source and destination addresses, and error-checking data so that damaged frames 
 can be detected and discarded; most often, higher-layer protocols trigger retransmission of lost frames.
+
+### How to use
+- Compile using
+```
+iverilog -o tb.vvp tv.v
+```
+- Run
+```
+vvp tb.vvp
+```
+- View signals
+```
+gtkwave tb.vcd
+```
 
 ### Read
 
@@ -109,8 +125,3 @@ of a transmitted frame by loss of the carrier. Later physical layers use an expl
 end of stream symbol or sequence to avoid ambiguity, especially where the carrier is continually sent 
 between frames; an example is Gigabit Ethernet with its 8b/10b encoding scheme that uses special 
 symbols which are transmitted before and after a frame is transmitted.
-
-
-
-
-
