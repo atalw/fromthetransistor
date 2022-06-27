@@ -18,6 +18,8 @@ Systems communicating over Ethernet divide a stream of data into shorter pieces 
 Each frame contains source and destination addresses, and error-checking data so that damaged frames 
 can be detected and discarded; most often, higher-layer protocols trigger retransmission of lost frames.
 
+The implementation is inspired by 10BASE-T whose data sheet is in this repo.
+
 ### How to use
 - Compile using
 ```
@@ -31,6 +33,13 @@ vvp tb.vvp
 ```
 gtkwave tb.vcd
 ```
+
+### TODO
+- Error detection
+    - Cycle redundancy check
+    - Collision detection
+- Timing
+- MAC address checks (source and destination)
 
 ### Read
 
