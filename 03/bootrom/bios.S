@@ -4,12 +4,12 @@
 .global _reset
 _reset:
 	b		reset_handler	/* reset */
-	b		.				/* fast interrupt */
-	b		.				/* interrupt */
-	b		.				/* supervisor */
-	b		.				/* abort */
-	b		.				/* system */
-	b		.				/* undefined */
+	b		.		/* fast interrupt */
+	b		.		/* interrupt */
+	b		.		/* supervisor */
+	b		.		/* abort */
+	b		.		/* system */
+	b		.		/* undefined */
 
 reset_handler:
 	ldr		x4, =UART_BASE
