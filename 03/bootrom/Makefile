@@ -10,7 +10,7 @@ bios.elf: linker.ld bios.o main.o
 	ld bios.o main.o -T linker.ld -o bios.elf
 
 qemu: bios.elf
-	qemu-system-aarch64 -machine virt -cpu cortex-a72 -m 4096 -nographic -kernal ./bios.elf
+	qemu-system-aarch64 -machine virt -cpu cortex-a72 -m 4096 -nographic -kernel ./bios.elf
 
 clean:
 	rm -rf bios.elf *.o

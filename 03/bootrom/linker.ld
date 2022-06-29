@@ -3,12 +3,12 @@ OUTPUT_ARCH(aarch64)
 TARGET(binary)
 ENTRY(_reset)
 
+/* virt cortex-a72 RAM start address is 0x4000000 */
 STACKTOP = 0x51000000;
 
 SECTIONS
 {
-	/*. = 0x0;*/
-	. = 0x40010000;
+	. = 0x40010000; 
 	.text : { 
 		bios.o (INTERRUPT_VECTOR)
 		*(.text)
@@ -16,7 +16,6 @@ SECTIONS
 	.data : { *(.data) }
 	.bss : { *(.bss COMMON) }
 	. = ALIGN(8);
-	/*. = . + 0x1000; */ /* 4kB of stack memory */
 	. = STACKTOP;
 	stack_top = .;
 }
