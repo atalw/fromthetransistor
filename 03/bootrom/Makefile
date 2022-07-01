@@ -1,7 +1,7 @@
 all: bios.o bios.elf kernel.o kernel.elf disk.img
 
 bios.o: bios.S
-	gcc -Wall -Wextra -c -nostartfiles -nostdlib -ffreestanding bios.S -o bios.o
+	gcc -Wall -Wextra -nostartfiles -nostdlib -ffreestanding -c bios.S -o bios.o
 
 kernel.o: kernel.c
 	gcc -Wall -Wextra -nostartfiles -nostdlib -ffreestanding -c kernel.c
@@ -20,7 +20,7 @@ disk.img: bios.bin kernel.bin
 	dd if=kernel.bin of=disk.img bs=512 seek=1 conv=notrunc
 
 qemu: bios
-	qemu-system-aarch64 -machine virt -cpu cortex-a72 -m 2096 -serial stdio -semihosting -bios ./bios -S -s
+	qemu-system-aarch64 -machine virt -cpu cortex-a72 -m 2096 -serial stdio -bios ./disk.img
 
 clean:
 	rm -rf bios.bin bios.elf kernel.bin kernel.elf *.o disk.img

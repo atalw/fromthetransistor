@@ -1,39 +1,42 @@
 #include "addr.h"
 
 .global _start
+
+/* The exception table is defined with offsets in the documentation here
+https://developer.arm.com/documentation/den0024/a/AArch64-Exception-Handling/AArch64-exception-table?lang=en */
 .balign 0x800
 _start:
 	b		reset_handler	/* reset */
 	.balign 0x80
-	b		.		/* undefined */
+	b		.
 	.balign 0x80
-	b		.		/* supervisor swi svc */
+	b		.
 	.balign 0x80
-	b		.		/* abort prefetch */
+	b		.
 	.balign 0x80
-	b		.		/* data */
+	b		.
 	.balign 0x80
-	b		.		/* reserved */
+	b		.
 	.balign 0x80
-	b		.		/* irq */
+	b		.
 	.balign 0x80
-	b		.		/* fiq */
+	b		.
 	.balign 0x80
-	b		.		/* fiq */
+	b		.
 	.balign 0x80
-	b		.		/* fiq */
+	b		.
 	.balign 0x80
-	b		.		/* fiq */
+	b		.
 	.balign 0x80
-	b		.		/* fiq */
+	b		.
 	.balign 0x80
-	b		.		/* fiq */
+	b		.
 	.balign 0x80
-	b		.		/* fiq */
+	b		.
 	.balign 0x80
-	b		.		/* fiq */
+	b		.
 	.balign 0x80
-	b		.		/* fiq */
+	b		.
 
 /* LDR: Load register, STR: Store register */
 /* The size of the load or store is determined by the register type X or W and the <Size> field. */
@@ -50,6 +53,6 @@ reset_handler:
 	mov		w2, #0x0300     /* Default control register value */
 	str		w2, [x1, #0x30] /* Control register location (we reset it) */
 
-	ldr		x0, =kernel_addr /* We place the kernel almost at the beginning of RAM (value defined in linker.ld) */
+	ldr		x0, =kernel_addr /* We place the kernel just at the beginning of RAM (value defined in linker.ld) */
 	mov		sp, x0          /* Set it to stack pointer */
-	/*b		c_main*/          /* Invoke c_main() in main.c */
+	/*b		c_main*/          /* No need to invoke kernel anymore, we place kernel code at sp through linker */

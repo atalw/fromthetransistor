@@ -7,11 +7,13 @@ int puts(const char *str);
  * is place at address 0x40001000 */
 int main() {
 	puts("Hello world!\n");
+	/* freestanding C needs to go in infinite loop otherwise main() is reinvoked */
+	while(1);
 	return 0;
 }
 
 int puts(const char *str) {
-	while (*str != '\n') {
+	while(*str) {
 		*((unsigned int *) UART_BASE) = *str++;
 	}
 	return 0;
