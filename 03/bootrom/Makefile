@@ -19,7 +19,7 @@ disk.img: bios.bin kernel.bin
 	dd if=bios.bin of=disk.img bs=512 conv=notrunc
 	dd if=kernel.bin of=disk.img bs=512 seek=1 conv=notrunc
 
-qemu: bios
+qemu: disk.img
 	qemu-system-aarch64 -machine virt -cpu cortex-a72 -m 2096 -serial stdio -bios ./disk.img
 
 clean:
