@@ -46,11 +46,12 @@ qemu-system-aarch64 -machine virt -cpu cortex-a72 -m 2048 -bios ./disk.img
 Some interesting things to note is that while the flash memory starts at `0x00000000`, the RAM starts at `0x40000000`. We place it a little beyond the starting address of RAM because Qemu automatically creates a [DTB](https://elinux.org/Device_Tree_Reference) at the address (which is used during the Linux boot). We also specify 2GB memory for the machine without which it won't work since the RAM starts at 1024MB.
 
 Note, we use the `-bios` flag instead of `-kernel` otherwise Qemu does some setup for us which we don't want in a bare-metal setup. For some reason all the examples I saw use `-kernel` which initially worked for me as well but on further understanding was simply incorrect. In my understanding, `-kernel` loads the code in RAM even if you specify an address of `0x00000000` and starts execution that location. To further add to this confusion, the original [ARM documentation](https://developer.arm.com/documentation/den0013/d/Boot-Code/Booting-a-bare-metal-system) says the _real_ exception vector table should be loaded into RAM.
-	> The _start directive in the GNU Assembler tells the linker to locate code at a particular address and can be used to place code in the vector table. 
-	> The initial vector table will be in non-volatile memory and can contain branch to self instructions (other than the reset vector) as no exceptions are 
-	> expected at this point. Typically, the reset vector contains a branch to the boot code in ROM. The ROM can be aliased to the address of the exception vector. 
-	> **The ROM then writes to some memory-remap peripheral that maps RAM into address 0 and the real exception vector table is copied into RAM.** 
-	> This means the part of the boot code that handles remapping must be position-independent, as only PC-relative addressing can be used.
+
+> The _start directive in the GNU Assembler tells the linker to locate code at a particular address and can be used to place code in the vector table. 
+> The initial vector table will be in non-volatile memory and can contain branch to self instructions (other than the reset vector) as no exceptions are 
+> expected at this point. Typically, the reset vector contains a branch to the boot code in ROM. The ROM can be aliased to the address of the exception vector. 
+> **The ROM then writes to some memory-remap peripheral that maps RAM into address 0 and the real exception vector table is copied into RAM.** 
+> This means the part of the boot code that handles remapping must be position-independent, as only PC-relative addressing can be used.
 
 I placed the actual vector table at `0x00000000` and the kernel in RAM and it seems to work fine.
 
