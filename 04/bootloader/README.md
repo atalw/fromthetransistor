@@ -1,5 +1,7 @@
 ## Bootloader
 
+Update: I've decided to pick this up later. I think, the main goal of this task is to build a bootloader, implement the UDP protocol, and download the kernel from a remote host. However, what stops us from doing this is the lack of an ethernet driver. The [hardware](https://github.com/qemu/qemu/blob/master/include/hw/virtio/virtio-net.h) and [protocol](https://github.com/qemu/qemu/blob/master/include/net/eth.h) for the virtio-net ethernet device are implemented in Qemu, however, for the bootloader to send/receive packets, we will have to write the driver ourself. That's a big task and perhaps building an SD card driver first may be a better introduction.
+
 The idea is to boot a kernel on a remote machine using UDP over Ethernet. So there are 2 files we need to consider, one is the bootloader and the other is an OS kernel binary. Since we need to send a file over the network, we'll be using TFTP which is a protocol built on top of UDP. The OS image will be baked into the machine and our bootloader will point to the correct address to load. We'll be using QEMU with it's networking capabilites to emulate a virtual machine.
 
 ### Some fundamentals
@@ -27,3 +29,8 @@ Once the BIOS is loaded, if the functionality exists, the bootloader can be poin
 
 
 - [EmCraft loading linux images via TFTP](https://www.emcraft.com/som/imx-8m/loading-linux-images-via-ethernet-and-tftp)
+
+
+[GCC and bare metal programming](https://cs107e.github.io/guides/gcc/)
+https://unix.stackexchange.com/questions/597789/virtio-vs-e1000-vs-rtl8139-whats-the-difference
+https://www.qemu.org/2018/02/09/understanding-qemu-devices/
