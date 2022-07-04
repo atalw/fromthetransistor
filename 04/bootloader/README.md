@@ -26,11 +26,12 @@ Once the BIOS is loaded, if the functionality exists, the bootloader can be poin
 - [Kernel](https://en.wikipedia.org/wiki/Kernel_(operating_system))
 - [Trivial File Transfer Protocol](https://en.wikipedia.org/wiki/Trivial_File_Transfer_Protocol): Simple protocol for transferring files, implemented on top of the UDP/IP protocols using well-known port number 69.
 - [GRUB](https://en.wikipedia.org/wiki/GNU_GRUB): Unified bootloader
-
-
 - [EmCraft loading linux images via TFTP](https://www.emcraft.com/som/imx-8m/loading-linux-images-via-ethernet-and-tftp)
-
-
-[GCC and bare metal programming](https://cs107e.github.io/guides/gcc/)
-https://unix.stackexchange.com/questions/597789/virtio-vs-e1000-vs-rtl8139-whats-the-difference
-https://www.qemu.org/2018/02/09/understanding-qemu-devices/
+- [GCC and bare metal programming](https://cs107e.github.io/guides/gcc/)
+- [Virtio vs e1000](https://unix.stackexchange.com/questions/597789/virtio-vs-e1000-vs-rtl8139-whats-the-difference)
+- [Understanding Qemu devices](https://www.qemu.org/2018/02/09/understanding-qemu-devices/)
+- [U-boot and TFTP network boot](https://blog.pentesteracademy.com/booting-an-emulated-arm-device-using-tftp-and-u-boot-6f6868cccd14)
+- [Ethernet bootloader from ARM](https://www.ijser.org/paper/Ethernet-Boot-loader-for-ARM-Processor.html)
+- [Bootloader from scratch](https://www.cs.cmu.edu/~410-s07/p4/p4-boot.pdf)
+- [Arduino TFTP bootloader source](https://github.com/arduino/TFTP-Bootloader/tree/master/eth-bootloader/firmware)
+- [U-boot TFTP bootloader source](https://github.com/ARM-software/u-boot/blob/master/net/tftp.c)
