@@ -1,6 +1,5 @@
 `include "table_walk.v"
 // In ARM9, CPU gives MMU a Modified virtual address (MVA).
-// MVA = PID (process id) + VA (virtual address)
 // Table Index = TI
 //
 // ARM9 version MVA
@@ -8,6 +7,8 @@
 // If VA[31:25] == 0,
 //      MVA = 7 bits PID + 25 bit address, for fast context switching
 //      128 processes + 32MB addressable space = 4GB total VM
+//      Virtual Addresses available to each process = 0x00000000 -> 0x01ffffff
+//      Virtual address actually used: (PID*32MB) -> (PID*32MB+0x01ffffff)
 // Else, MVA is:
 // | L1 TI   |   L2 TI    |  Page index
 // --------------------------------------
@@ -18,12 +19,15 @@
 // Page index = [11:0] = 12 bits = 4096 subpages per page table
 // The translation table has up to 4096 x 32-bit entries, each describing
 // 1MB of virtual memory. This allows up to 4GB of virtual memory to be addressed.
+// This means 32 tables per process.
 //
 // Our version MVA
 // ===========
 // If VA[13:11] == 0
 //      MVA = 3 bits PID + 11 bit address, for fast context switching
 //      8 processes + 2kb addressable space = 16kB total VM
+//      Virtual Addresses available to each process = 0x0000 -> 0x0800
+//      Virtual address actually used: (PID*2kB) -> (PID*2kB+0x0800)
 // Else, MVA is:
 // |  L1 TI  | L2 TI | Page index
 // ------------------------------
@@ -34,6 +38,11 @@
 // Page index = [4:0] = 5 bits = 32 bytes per page table
 // The translation table (L1) has up to 32 32-bit entries, each describing
 // 512 bytes of virtual memory. This allows up to 16kB of virtual memory to be addressed.
+// This means, 4 tables per process.
+//
+// Example, (make sure to zero index)
+// 4th proc, addr 0x200 = 01101 0000 00000 (13th table, 0th page, 0 offset)
+// 4th proc, addr 0x700 = 01111 1000 00000 (15th table, 8th page, 0 offset)
 //
 // Level one descriptor = TTB[31:14] + Table index[31:20] + (bit 1 and 0 set to 0)
 // Level two descriptor (L2D) = Section/table base address + section/table index
@@ -50,6 +59,7 @@
 //              - 01 -> 64kb subpage
 //              - 10 -> 4kb subpage
 //              - 11 -> 1kb subpage -> read VA[9:0]
+//
 module tlb(
     input wire in_clk,
     input wire in_en,
@@ -97,26 +107,5 @@ module tlb(
     assign out_ram_ren = r_out_ram_ren;
     assign out_ram_addr = r_out_ram_addr;
     assign out_ram_size = r_out_ram_size;
-
-    always @(posedge in_clk) begin
-        if (in_en) begin
-            // Enable ram read for the TTB
-            r_out_ram_ren <= 1
-            // if we've got the TTB, do the first level descriptor fetch
-            if (in_ram_data && ~r_l1d) begin
-                // r_l1d = {in_ram_data[31:14], in_mva[31:20], 2'b00};
-                r_l1d = {in_ram_data[13:6], in_mva[13:9], 2'b01};
-                r_out_ram_addr = r_l1d;
-            end 
-            // after first level fetch, do second level fetch
-            else if (in_ram_data && r_l1d && ~rl2d) begin
-                r_page_table_desc = in_ram_data;
-                r_l2d = {r_page_table_desc[13:5],in_mva[5:3], 2'b01};
-            end
-        end else begin
-            r_out_ram_ren <= 0
-        end
-    end
-
 
 endmodule
