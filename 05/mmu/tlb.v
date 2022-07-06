@@ -1,30 +1,39 @@
 `include "table_walk.v"
 // In ARM9, CPU gives MMU a Modified virtual address (MVA).
-// MVA = Page table index(31:20) + Section index(19:0)
-//
+// MVA = PID (process id) + VA (virtual address)
 // Table Index = TI
 //
 // ARM9 version MVA
 // ============
+// If VA[31:25] == 0,
+//      MVA = 7 bits PID + 25 bit address, for fast context switching
+//      128 processes + 32MB addressable space = 4GB total VM
+// Else, MVA is:
 // | L1 TI   |   L2 TI    |  Page index
 // --------------------------------------
 // 31       20 19       12 11           0
 // 
 // L1 TI = [31:20] = 12 bits = 4096 translation tables
 // L2 TI = [19:12] = 8 bits = 256 page table entries
-// Page index = [11:0] = 12 bits = 4096 addresses per page table
-// Multiply all of these and we get 4GB addressable space.
+// Page index = [11:0] = 12 bits = 4096 subpages per page table
+// The translation table has up to 4096 x 32-bit entries, each describing
+// 1MB of virtual memory. This allows up to 4GB of virtual memory to be addressed.
 //
 // Our version MVA
 // ===========
+// If VA[13:11] == 0
+//      MVA = 3 bits PID + 11 bit address, for fast context switching
+//      8 processes + 2kb addressable space = 16kB total VM
+// Else, MVA is:
 // |  L1 TI  | L2 TI | Page index
 // ------------------------------
 // 13       9 8     5 4         0
 //
 // L1 TI = [13:9] = 5 bits = 32 translation tables
 // L2 TI = [8:5] = 4 bits = 16 page tables
-// Page index = [4:0] = 5 bits = 32 addresses per page table
-// Multiply all of these and we get 16kB addressable space.
+// Page index = [4:0] = 5 bits = 32 bytes per page table
+// The translation table (L1) has up to 32 32-bit entries, each describing
+// 512 bytes of virtual memory. This allows up to 16kB of virtual memory to be addressed.
 //
 // Level one descriptor = TTB[31:14] + Table index[31:20] + (bit 1 and 0 set to 0)
 // Level two descriptor (L2D) = Section/table base address + section/table index
