@@ -2,11 +2,11 @@
 // In ARM9, CPU gives MMU a Modified virtual address (MVA).
 // Table Index = TI
 //
-// ARM9 version MVA
+// ARM9 version MVA (32-bit addresses)
 // ============
 // If VA[31:25] == 0,
 //      MVA = 7 bits PID + 25 bit address, for fast context switching
-//      128 processes + 32MB addressable space = 4GB total VM
+//      = 128 processes + 32MB addressable space = 4GB total VM
 //      Virtual Addresses available to each process = 0x00000000 -> 0x01ffffff
 //      Virtual address actually used: (PID*32MB) -> (PID*32MB+0x01ffffff)
 // Else, MVA is:
@@ -19,13 +19,16 @@
 // Page index = [11:0] = 12 bits = 4096 subpages per page table
 // The translation table has up to 4096 x 32-bit entries, each describing
 // 1MB of virtual memory. This allows up to 4GB of virtual memory to be addressed.
+// TTE provides base address for 256 PTEs = 1MB split into 4kB blocks
+// 4 byte Translation table entry (TTE) and 4 byte Page table entry (PTE)
+//
 // This means 32 tables per process.
 //
-// Our version MVA
+// Our version MVA (14 bit addresses)
 // ===========
 // If VA[13:11] == 0
 //      MVA = 3 bits PID + 11 bit address, for fast context switching
-//      8 processes + 2kb addressable space = 16kB total VM
+//      = 8 processes + 2kb addressable space = 16kB total VM
 //      Virtual Addresses available to each process = 0x0000 -> 0x0800
 //      Virtual address actually used: (PID*2kB) -> (PID*2kB+0x0800)
 // Else, MVA is:
@@ -38,6 +41,8 @@
 // Page index = [4:0] = 5 bits = 32 bytes per page table
 // The translation table (L1) has up to 32 32-bit entries, each describing
 // 512 bytes of virtual memory. This allows up to 16kB of virtual memory to be addressed.
+// TTE provides base address to 16 PTEs = 512 bytes split into 32 byte blocks
+// 14-bit Translation table entry (TTE) and 14-bit Page table entry (PTE)
 // This means, 4 tables per process.
 //
 // Example, (make sure to zero index)
@@ -72,7 +77,9 @@ module tlb(
     output wire out_walk_en,
     );
 
-    reg [31:0] cache[7:0];
+    // L1 cache that maps virtual page numbers to physical page numbers
+    // Contains complete page table entries for N pages
+    reg [13:0] cache[7:0];
 
     reg [13:0] r_out_ram_addr;
     reg [1:0] r_out_ram_size;

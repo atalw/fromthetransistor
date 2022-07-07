@@ -1,4 +1,4 @@
-module ram(
+module dram(
     input  wire            clock,
     input  wire            in_ren,  // read enable
     input  wire  [13:0]    in_addr,
@@ -9,8 +9,7 @@ module ram(
     );
 
     // Translation table base register at a 16kB boundary
-    reg [13:0] r_ttb;
-
+    // reg [13:0] r_ttb;
 
     // 2^14 * 8 / 32 = 16 kB, little endian
     // + Translation table cache should be 16kB (check tlb.v for calc)
@@ -20,7 +19,8 @@ module ram(
 
     initial begin
         // Hardcoding memory index 4096 (16kB boundary) as TTB.
-        r_ttb = 14'b01000000000000;
+        // r_ttb = 14'b01000000000000;
+        // r_ttb = 14'd0;
     end
 
     always @(posedge clock) begin
