@@ -11,7 +11,7 @@ module table_walk(
     input   wire [31:0] in_mcu_data,    // from MCU
     output  wire        out_mcu_ren,    // to MCU
     output  wire [13:0] out_mcu_addr,   // to MCU
-    output  wire [1:0]  out_mcu_size,   // to MCU
+    output  wire [1:0]  out_mcu_size    // to MCU
     );
 
     // Hardcoded Translation table base address
@@ -27,14 +27,14 @@ module table_walk(
     reg [1:0]   r_stage = 2'd0;
 
     mcu mcu(
-        .in_dram_en(out_mcu_ren),
+        .in_dram_ren(out_mcu_ren),
         .in_dram_addr(out_mcu_addr),
         .in_dram_size(out_mcu_size),
         .out_mcu_data(in_mcu_data),
         .in_dram_data(),
-        .out_dram_en(),
+        .out_dram_ren(),
         .out_dram_addr(),
-        .out_dram_size(),
+        .out_dram_size()
     );
 
     assign out_mcu_ren = r_mcu_ren;
@@ -44,11 +44,11 @@ module table_walk(
 
     always @(posedge in_clk) begin
         if (in_en) begin
-            case (r_stage):
+            case (r_stage)
                 // Translation table stage
                 2'b00: begin
                     // Enable ram read for the TTB
-                    r_mcu_ren <= 1
+                    r_mcu_ren <= 1;
                     r_mcu_addr <= r_ttb_addr;
                     r_mcu_size <= 2'b10; // word length
 
@@ -60,7 +60,7 @@ module table_walk(
 
                 // Page table stage
                 2'b01: begin
-                    r_mcu_ren <= 1
+                    r_mcu_ren <= 1;
                     r_mcu_addr <= r_l1d;
                     r_mcu_size <= 2'b10; // word length
                     if (in_mcu_data) begin
@@ -73,7 +73,7 @@ module table_walk(
 
                 // Page stage
                 2'b10: begin
-                    r_mcu_ren <= 1
+                    r_mcu_ren <= 1;
                     r_mcu_addr <= r_l2d;
                     r_mcu_size <= 2'b10; // word length
                     if (in_mcu_data) begin
@@ -84,7 +84,7 @@ module table_walk(
 
                 // Reset
                 2'b11: begin
-                    r_mcu <= 0;
+                    r_mcu_ren <= 0;
                     r_mcu_addr <= 0;
                     r_mcu_size <= 0;
                     r_stage <= 0;

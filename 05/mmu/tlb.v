@@ -1,4 +1,3 @@
-`include "table_walk.v"
 // In ARM9, CPU gives MMU a Modified virtual address (MVA).
 // Table Index = TI
 //
@@ -66,53 +65,29 @@
 //              - 11 -> 1kb subpage -> read VA[9:0]
 //
 module tlb(
-    input wire in_clk,
-    input wire in_en,
-    input wire [13:0] in_mva,
-    input wire [31:0] in_ram_data,
-    output wire         out_ram_ren,
-    output wire [13:0] out_ram_addr,
-    output wire [1:0] out_ram_size,
-    output wire [13:0] out_paddr,
-    output wire out_walk_en,
+    input   wire        in_clk,
+    input   wire        in_ren,
+    input   wire [13:0] in_mva,
+    output  wire        out_err,
+    output  wire [13:0] out_paddr
     );
 
     // L1 cache that maps virtual page numbers to physical page numbers
     // Contains complete page table entries for N pages
-    reg [13:0] cache[7:0];
+    reg [13:0] cache [7:0];
 
-    reg [13:0] r_out_ram_addr;
-    reg [1:0] r_out_ram_size;
+    reg [13:0] r_paddr;
+    reg r_err; // page fault
 
-    reg [13:0] r_l1d; // Level one descriptor
-    reg [13:0] r_l2d; // Level one descriptor
+    assign out_paddr = r_paddr;
 
-    // After l1d, we get a page table desc which we convert to l2d
-    reg [13:0] r_page_table_desc;
+    always @(posedge in_clk) begin
+        if (in_ren) begin
+            // check cache in parallel for mva
 
-    ram ram(
-        .in_clk(in_clk),
-        .in_ren(out_ram_ren),
-        .in_addr(out_ram_addr),
-        .in_write(), 
-        .in_wdata(),
-        .in_size(out_ram_size),
-        .out_rdata(in_ram_data)
-    );
-
-
-    // Table walk
-    table_walk table_walk();
-
-    initial begin
-        // Hardcoding memory index 3 as TTB register.
-        r_out_ram_addr = 14'd3;
-        r_out_ram_size = 2'b10;
-
+        end else begin
+            r_paddr <= 0;
+            r_err <= 0;
+        end
     end
-
-    assign out_ram_ren = r_out_ram_ren;
-    assign out_ram_addr = r_out_ram_addr;
-    assign out_ram_size = r_out_ram_size;
-
 endmodule
